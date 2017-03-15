@@ -1,0 +1,295 @@
+﻿@section script{
+
+    <script src="~/Scripts/juery.migrate.js"></script>
+    <script src="~/Scripts/xheditor/xheditor-1.2.1.min.js"></script>
+    <script src="~/Scripts/xheditor/xheditor_lang/zh-cn.js"></script>
+    <script>
+        $(function () {
+            $('#bbssection_datagrid_bbssection').datagrid({
+                fit: true,
+                border: false,
+                toolbar: '#bbssection_toolbar_bbssection',
+                fitColumns: true,
+                url: '/Website/BBSSections',
+                pageSize: 20,
+                singleSelect: true,
+                columns: [[
+                    {
+                        field: 'SectionName', halign: 'center', title: '版块名称', width: 400
+                    }, {
+                        field: 'MemberLoginName', title: '版主（账号|姓名|昵称）', align: 'center', width: 200, fixed: true, formatter: function (value, row) {
+                            if (value) {
+                                return value + " | " + row.MemberName + " | " + row.MemberDisplayName;
+                            } else {
+                                return '<span style="color:#ccc;">空缺</span>';
+                            }
+                        }
+                    },
+                     {
+                         field: 'TopicCount', align: 'center', title: '帖子总数', width: 200
+                     },
+                      {
+                          field: 'SN', align: 'center', title: '排序号', width: 200
+                      },
+                    {
+                        field: 'CreateTime', title: '创建时间', align: 'center', width: 200, fixed: true, formatter: function (value, row) {
+                            if (value) {
+                                return $.getDate(value).Format('yyyy-MM-dd hh:mm:ss');
+                            }
+                        }
+                    }, {
+                        field: 'EmployeeName', align: 'center', title: '创建人', width: 200, fixed: true
+                    }, {
+                        field: 'edit', align: 'center', title: '操作', width: 80, fixed: true, formatter: function (value, row, index) {
+                            return '<a class="neweditbutton" iconCls="icon-edit" plain="true" onclick="openEditDialog(' + index + ')">编辑</a>'
+                        }
+                    }
+
+                ]],
+                onLoadSuccess: function () {
+                    $('.neweditbutton').removeClass('neweditbutton').linkbutton();
+                    $('.newtooltip').removeClass('newtooltip').tooltip();
+                    $(this).datagrid('fixRowHeight')
+                },
+                onDblClickRow: function (index, row) {
+                    openEditDialog(index);
+                },
+                rownumbers: true,
+                pagination: true
+            })
+
+            $('#editor').xheditor({
+                skin: 'nostyle', emotMark: false, tools: "Cut,Copy,Paste,Pastetext,|,Blocktag,Fontface,FontSize,Bold,Italic,Underline,Strikethrough,FontColor,BackColor,SelectAll,Removeformat,|,Align,List,Outdent,Indent,|,Link,Unlink,Hr,Emot,Table,|,Source,Preview,Fullscreen"
+            });
+        })
+        /*打开编辑窗口*/
+        function openEditDialog(index) {
+            $('#bbssection_form').form('reset');
+           
+
+            var row = $('#bbssection_datagrid_bbssection').datagrid('getRows')[index];
+          
+            setTimeout(function () { $('#bbssection_form').form('load', row); }, 10);
+          
+           
+            $('#account_combogrid_member').combogrid('setText', row.MemberLoginName)
+            $('#bbssection_dialog_edit').dialog('setTitle', '编辑论坛版块').dialog('open');
+           
+        }
+
+        /*打开添加窗口*/
+        function openAddDialog(index) {
+            $('#bbssection_form').form('reset');
+            $('#bbssection_dialog_edit').dialog('setTitle', '添加论坛版块').dialog('open');
+        }
+        /*关闭编辑窗口*/
+        function closeDialog() {
+            $('#bbssection_form').form('reset');
+            $('#bbssection_dialog_edit').dialog('close');
+        }
+
+        /*保存*/
+        function save() {
+
+            if ($('#bbssection_form').form('validate')) {
+                var obj = $('#bbssection_form').serializeObject();
+               
+                if (obj.Profile == '') {
+                    $.messager.alert('提示', '请输入论坛版块简介', 'info');
+                } else {
+
+                    obj.Profile = encodeURIComponent(obj.Profile);
+                    var url;
+                    if (obj.Id == '00000000-0000-0000-0000-00000000000') {
+                        url = '/Website/AddBBSSection';
+                    } else {
+                        url = '/Website/EditBBSSection';
+                    }
+                    closeDialog();
+
+                    $.post(url, obj, function (data) {
+                        if (data.resultCode == 1) {
+                            $('#bbssection_datagrid_bbssection').datagrid('reload');
+                        }
+                    })
+                }
+
+            }
+
+        }
+
+        function remove() {
+            var row = $('#bbssection_datagrid_bbssection').datagrid('getSelected');
+            if (row != null) {
+                $.messager.confirm('确认', '确认要删除该条论坛版块？', function (r) {
+                    if (r) {
+                        $.post('/Website/RemoveBBSSection/' + row.Id, {}, function (data) {
+                            if (data.resultCode == 1) {
+                                $('#bbssection_datagrid_bbssection').datagrid('reload');
+
+                            } else {
+                                $.messager.alert('错误', data.message, 'warning');
+                            }
+                        }, 'json')
+                    }
+                })
+
+            } else {
+                $.messager.alert('提示', '请选择要删除的论坛版块', 'info');
+            }
+
+        }
+
+        /*用户选择*/
+        $(function () {
+            $('#account_combogrid_member').combogrid({
+                pagination: true,
+                panelWidth: 700, panelHeight: 300,
+                pageSize: 1,
+                pageList: [1],
+                width: 200,
+                required: true,
+                novalidate: true,
+                editable: false,
+                fitColumns: true,
+                border: false,
+                singleSelect: true,
+                textField: 'LoginName', idField: 'Id',
+                url: '/Website/BBSSectionMembers',
+
+                columns: [
+                    [
+                        {
+                            field: 'MemberName', title: '客户名称', rowspan: 2, width: 100, align: 'center', formatter: function (value, row, index) {
+                                return row.LoginName + ' | ' + row.Name;
+                            }
+                        },
+                        { field: 'IDCard', title: '身份证号码', rowspan: 2, width: 150, fixed: true, align: 'center' },
+                        {
+                            field: 'Sex', title: '性别', rowspan: 2, width: 50, fixed: true, align: 'center', formatter: function (value) {
+                                switch (value.toString()) {
+                                    case "0": return "未知";
+                                    case "1": return '男';
+                                    case "2": return "女";
+                                }
+                            }
+                        },
+                        { title: '联系方式', colspan: 3, field: '', width: 100, align: 'center' },
+                        {
+                            field: 'Grade', title: '等级', rowspan: 2, width: 40, fixed: true, align: 'center', formatter: function (value) {
+                                switch (value.toString()) {
+                                    case "0": return "A";
+                                    case "1": return "B";
+                                    case "2": return "C";
+                                    case "3": return "D";
+                                    case "4": return "E";
+                                    case "5": return "F";
+                                }
+                            }
+                        },
+                        { field: 'Score', title: '积分', rowspan: 2, width: 60, fixed: true, align: 'center' },
+                        {
+                            field: 'MemberType', title: '客户类型', rowspan: 2, width: 60, fixed: true, align: 'center', formatter: function (value, row, index) {
+                                if (value.toString() == "0") {
+                                    return '信贷客户';
+                                }
+                                else {
+                                    return '理财客户';
+                                }
+                            }
+                        },
+
+                        {
+                            field: 'Status', title: '状态', width: 40, rowspan: 2, fixed: true, align: 'center', formatter: function (value) {
+                                switch (value.toString()) {
+                                    case "0":
+                                        return '<span style="display:inline-block;width:16px;height:16px;background:#bbb;border-radius:8px;line-height:16px; color:#eee;" title="未启用">▬</span>';
+                                    case "1":
+                                        return '<span style="display:inline-block;width:16px;height:16px;background:mediumseagreen;border-radius:8px;line-height:16px; color:#eee;" title="启用">√</span>';
+                                    case "2":
+                                        return '<span style="display:inline-block;width:16px;height:16px;background:red;border-radius:8px;line-height:16px; color:#eee;" title="禁用">×</span>';
+                                    case "3":
+                                        return '<span style="display:inline-block;width:16px;height:16px;background:cornflowerblue;border-radius:8px;line-height:16px; color:#eee;" title="VIP">V</span>';
+                                }
+                            }
+                        }
+                    ],
+                    [
+                        {
+                            field: 'Tel', title: '电话', width: 40, fixed: true, align: 'center', formatter: function (value, row, index) {
+                                return '<a href="#" title="' + value + '" class="icon-tel newtooltip" style="display:inline-block;width:16px;height:16px;vertical-align:middle;"></a>';
+                            }
+                        },
+                        {
+                            field: 'Mobile', title: '手机', width: 40, fixed: true, align: 'center', formatter: function (value, row, index) {
+                                return '<a href="#" title="' + value + '" class="icon-mobile newtooltip" style="display:inline-block;width:16px;height:16px;vertical-align:middle;"></a>';
+                            }
+                        },
+                        {
+                            field: 'Email', title: '邮箱', width: 40, fixed: true, align: 'center', formatter: function (value, row, index) {
+                                return '<a href="#" title="' + value + '" class="icon-email newtooltip" style="display:inline-block;width:16px;height:16px;vertical-align:middle;"></a>';
+                            }
+                        }
+
+                    ]
+                ],
+                onLoadSuccess: function () {
+                    $(this).combogrid('clear');
+                }
+            })
+            $('#account_combogrid_member').combogrid('grid').datagrid('getPager').pagination({ buttons: $('#account_toolbar_member') })
+        })
+
+    </script>
+}
+<div id="account_toolbar_member">
+    <table cellspacing="0" cellpadding="0">
+        <tbody>
+            <tr>
+                <td>
+                    <input class="easyui-searchbox" prompt="请输入用户关键字" data-options="searcher:function(value){$('#account_combogrid_member').combogrid('grid').datagrid('load',{keyword:value})}">
+                </td>
+
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<div id="bbssection_datagrid_bbssection">
+    <div id="bbssection_toolbar_bbssection">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-add" onclick="openAddDialog();">添加</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-remove" onclick="window.remove();">删除</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){$('#bbssection_datagrid_bbssection').datagrid('load',{keyword:value})},width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#bbssection_datagrid_bbssection').datagrid('reload')">刷新</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+<div id="bbssection_dialog_edit" style="padding:10px;width:800px;height:510px;" closed="true" class="easyui-dialog" modal="true" buttons="#bbssection_button_edit">
+    <form id="bbssection_form">
+
+        <input name="Id" value="00000000-0000-0000-0000-00000000000" style="display:none;" hidden />
+        <p>
+            <span>版块名称：</span><input name="SectionName" class="easyui-textbox" data-options="validType:'length[0,100]',required:true" style="width:300px;" />
+            <span style="margin-left:10px;">版主：</span><select id="account_combogrid_member" name="MemberId" prompt="请选择要为哪个客户添加账户"></select>
+            <span style="margin-left:10px;">排序号：</span><input name="SN" class="easyui-numberbox" min="0" max="9999" required style="width:60px" />
+        </p>
+        <p style="margin-top:10px;">论坛版块简介：</p>
+        <textarea style="width:100%;height:330px;" id="editor" name="Profile"></textarea>
+    </form>
+    <div id="bbssection_button_edit">
+        <a class="easyui-linkbutton" iconcls="icon-save" plain="true" onclick="save()">保存</a>
+        <a class="easyui-linkbutton" iconcls="icon-cancel" plain="true" onclick="$('#bbssection_dialog_edit').dialog('close')">关闭</a>
+    </div>
+</div>

@@ -1,0 +1,252 @@
+﻿@{
+
+    ViewBag.Title = "管理后台-营业网点管理";
+}
+
+@section script{
+
+    <script>
+        //打开并填充修改窗口
+        function OpenAndFillEditDialog(id) {
+            //后台功能实现后替换成远程获取
+            $.post('@Url.ActionPermission("GetPlatformById", "Platform")', { id: id }, function (data) {
+                $('#platform_form_edit').form('load', data.row);
+                console.log(data.row)
+                $('#platform_dialog_Platforminfo').dialog('open').dialog('setTitle', '修改网点信息');
+            }, 'json');
+        }
+        //打开修改窗口，标题设成添加
+        function OpenAddDialog() {
+            $('#platform_form_edit').form('reset');
+            //CKEDITOR.instances['platform_ckeditor_notice'].setData('');
+            $('#platform_dialog_Platforminfo').dialog('open').dialog('setTitle', '添加网点信息');
+        }
+        //提交进行修改或添加
+        function PostPlatformInfo() {
+            function AjaxPostForm(action) {
+                $.ajaxStart();
+                $('#platform_form_edit').ajaxSubmit({
+                    url: action,
+                    data: {},
+                    type: 'POST',
+                    beforeSubmit: function (data) { },
+                    success: function () {
+                        CloseEditDialog();
+                        $.ajaxEnd();
+                        $('#platform_datagrid_platformtable').datagrid('reload');
+
+                    }
+                });
+            }
+            if ($('#platform_form_edit').form('validate')) {
+                if ($('#platform_form_edit [name="Id"]').val() == "00000000-0000-0000-0000-000000000000") {
+                    AjaxPostForm('@Url.ActionPermission( "Add","Platform")');
+                } else {
+                    AjaxPostForm('@Url.ActionPermission( "Edit","Platform")');
+                }
+            }
+        }
+
+        //关闭修改窗口
+        function CloseEditDialog() {
+            $('#platform_form_edit').form('reset');
+            $('#platform_dialog_Platforminfo').dialog('close');
+        }
+        //删除选中的
+        function Remove() {
+
+            var ids = $('#platform_datagrid_platformtable').datagrid('getSelectionsValues', 'Id');
+            if ($.isEmptyObject(ids)) {
+                $.messager.alert('提示', '请选择要删除的网点', 'info');
+            } else {
+                $.messager.confirm('提示', String.Format('确定要删除所选的{0}个网点？', ids.length), function (r) {
+                    if (r) {
+                        $.ajaxStart();
+                        $.post('@Url.ActionPermission( "Remove","Platform")', { ids: ids }, function (data) {
+                            $.ajaxEnd();
+                            if (data.resultCode == 1) {
+                                $('#platform_datagrid_platformtable').datagrid('reload');
+                                $.slideMessage('删除成功', data.message);
+                            } else {
+                                $.slideMessage('删除失败', data.message);
+                            }
+                        }, 'json');
+                    }
+                });
+            }
+        }
+        //初始化表
+        $(function () {
+
+            $('#platform_datagrid_platformtable').datagrid({
+                toolbar: '#toolbar',
+                fit: true,
+                border: false,
+                rownumbers: true,
+
+                fitColumns: true,
+                @Html.HasActionPermission("GetPlatforms", "Platform", "url:'/Platform/GetPlatforms',")
+                pagination: true,
+                onLoadSuccess: function () {
+                    $('a.plathform_linkbutton_edit').linkbutton({
+                        iconCls: 'icon-edit', onClick: function () {
+                            OpenAndFillEditDialog($(this).data('id'));
+                        }, plain: true
+                    })
+                    $(this).datagrid('fixRowHeight')
+                }, onDblClickRow: function (index, row) {
+                    OpenAndFillEditDialog(row.Id);
+                }
+            })
+
+        })
+
+        function showFeeDialog() {
+
+        }
+    </script>
+}
+
+
+
+
+<div id="toolbar">
+    <table cellspacing="0" cellpadding="0">
+        <tbody>
+            <tr>
+                <td>
+                    @Html.HasActionPermission("Add", "Platform", "<a id=\"plathform_linkbutton_add\" class=\"easyui-linkbutton\" data-options=\"iconCls:'icon-add',plain:true\" onclick=\"OpenAddDialog()\">添加</a>")
+
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    @Html.HasActionPermission("Remove", "Platform", "<a id=\"plathform_linkbutton_remove\" class=\"easyui-linkbutton\" data-options=\"iconCls:'icon-remove',plain:true\" onclick=\"Remove()\">删除</a>")
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" data-options="iconCls:'icon-undo',plain:true" onclick="$('#platform_datagrid_platformtable').datagrid('unselectAll')">取消选择</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#platform_datagrid_platformtable').datagrid('load',{keyword:value})
+                               },width:235" />
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#platform_datagrid_platformtable').datagrid('reload')">刷新</a></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<table id="platform_datagrid_platformtable">
+    <thead>
+        <tr>
+            <th data-options="field:'Id',width:30,align:'center',hidden:true">ID</th>
+            <th data-options="field:'PlatformName',width:120,align:'center'">网点名称</th>
+            <th data-options="field:'Domain',width:160,align:'center'">网点子域名</th>
+            <th data-options="field:'Contact',width:80,align:'center',fixed:true">法人/联系人</th>
+            <th data-options="field:'PhoneNumber',width:120,align:'center'">联系电话</th>
+            <th data-options="field:'Address',width:200,align:'center'">地址</th>
+            <th data-options="field:'ZipCode',width:70,align:'center',fixed:true">邮编</th>
+            <th data-options="field:'Email',width:120,align:'center'">电子邮箱</th>
+            <th data-options="field:'CreateTime',width:126,align:'center',fixed:true,formatter:function(value){return $.formatJsonDate(value)}">创建时间</th>
+            <th data-options="field:'Remark',width:120,align:'center'">备注</th>
+            <th data-options="field:'Notice',width:120,align:'center',hidden:true">平台公告</th>
+
+            <th data-options="field:'edit',width:80,fixed:true,align:'center',formatter:function(value,rowData){ return '&lt;a data-id=\''+rowData.Id+'\' class=\'plathform_linkbutton_edit\'>修改&lt;/a>';}">操作</th>
+        </tr>
+    </thead>
+
+</table>
+
+<style>
+    #platform_dialog_Platforminfo tr td.h {
+        text-align: right;
+        height: 30px;
+    }
+</style>
+<div id="platform_dialog_Platforminfo" class="easyui-dialog" title="平台信息修改" style="width:800px; overflow: hidden; height: 350px;padding:5px 10px" data-options="modal:true,closed:true,buttons:[{iconCls:'icon-ok',text:'确定',handler:function(){PostPlatformInfo()}},{iconCls:'icon-no',text:'取消',handler:function(){CloseEditDialog()}}]">
+    <form id="platform_form_edit">
+        <fieldset style="width:100%;border:1px solid #ccc;padding-bottom:10px;">
+            <legend style="margin-left:10px;">
+                平台基本信息
+            </legend>
+            <table id="tb-user" class="tb" border="0" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;">
+                <colgroup>
+                    <col width="15%" />
+                    <col width="35%" />
+                    <col width="15%" />
+                    <col width="35%" />
+                </colgroup>
+                <tr class="line-h30">
+                    <td class="h">
+                        <input style="display:none;" name="Id" value="00000000-0000-0000-0000-000000000000" />
+                        网点名称：
+                    </td>
+                    <td align="left">
+                        <input class="easyui-validatebox" name="PlatformName" type="text" data-options="validType:length[0,50],invalidMessage:'平台名称不能超过50个字符！',required:true" style="width: 95%" />
+                    </td>
+                    <td class="h">
+                        网点子域名：
+                    </td>
+                    <td align="left">
+                        <input class="easyui-validatebox" name="Domain" type="text" data-options="validType:['domain','length[1,50]'],required:true" style="width: 95%" size="200" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">
+                        法人/联系人：
+                    </td>
+                    <td align="left">
+                        <input class="easyui-validatebox" name="Contact" type="text" data-options="validType:['name','length[1,18]'],required:true" style="width: 95%" size="200" />
+                    </td>
+                    <td class="h">
+                        联系电话：
+                    </td>
+                    <td align="left">
+                        <input class="easyui-validatebox" type="text" name="PhoneNumber" data-options="validType:'phone',required:true" style="width: 95%" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="h">
+                        Email：
+                    </td>
+                    <td align="left" style="height: 26px;">
+                        <input class="easyui-validatebox" type="text" name="Email" data-options="required:true,validType:['email','length[1,254]']" style="width: 95%" size="200" />
+                    </td>
+                    <td class="h">
+                        邮编：
+                    </td>
+                    <td align="left">
+                        <input class="easyui-validatebox" type="text" name="ZipCode" data-options="required:true,validType:'zip'" style="width: 95%" />
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td class="h">
+                        地址：
+                    </td>
+                    <td align="left" style="height: 26px;">
+                        <input class="easyui-validatebox" type="text" name="Address" data-options="required:true,validType:['length[1,100]']" style="width: 95%" size="200" />
+                    </td>
+
+                </tr>
+                <tr>
+                    <td class="h">
+                        备注：
+                    </td>
+                    <td align="left" colspan="3">
+                        <textarea class="easyui-validatebox" name="Remark" data-options="validType:['length[0,254]']" style="width:98%; height:100px;  resize:none;"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </fieldset>
+
+
+    </form>
+</div>
+

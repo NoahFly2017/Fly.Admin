@@ -1,0 +1,353 @@
+﻿@section script{
+
+    <script src="~/Scripts/juery.migrate.js"></script>
+    <script src="~/Scripts/xheditor/xheditor-1.2.1.min.js"></script>
+    <script src="~/Scripts/xheditor/xheditor_lang/zh-cn.js"></script>
+    <script>
+        $(function () {
+            $('#topic_datagrid_topic').treegrid({
+                fit: true,
+                border: false,
+                toolbar: '#topic_toolbar_topic',
+                fitColumns: true,
+                url: '/Website/BBSTopics',
+                pageSize: 20,
+                idField: 'SectionOrTopicId',
+                treeField: 'SectionNameOrTitle',
+                singleSelect: false,
+                columns: [[
+                    {
+                        rowspan: 2,
+                        field: 'SectionNameOrTitle', halign: 'center', title: '标题', width: 200
+                    },
+                    {
+                        rowspan: 2,
+                        field: 'MemeberLoginName', align: 'center', title: '发帖人（账号|姓名|昵称）', width: 200, formatter: function (value, row, index) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-')
+                                return value + " | " + row.MemberName + " | " + row.MemberDisplayName;
+                        }
+                    }, {
+                        rowspan: 2,
+                        field: 'ClickCount', align: 'center', title: '点击数', width: 100, formatter: function (value, row, index) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-')
+                                return value;
+                        }
+                    }, {
+                        rowspan: 2,
+                        field: 'ReplyCount', align: 'center', title: '回复数', width:100, formatter: function (value, row, index) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-')
+                                return value;
+                        }
+                    }, { rowspan: 1, colspan: 3, title: '状态', align: 'center', width: 100 }, { rowspan: 1, colspan: 4, title: '分类', align: 'center', width: 100 }, {
+                        rowspan: 2,
+                        field: 'CreateTime', title: '创建时间', align: 'center', width: 140, fixed: true, formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (value) {
+                                    return $.getDate(value).Format('yyyy-MM-dd hh:mm:ss');
+                                }
+                            }
+
+                        }
+                    }, {
+                        rowspan: 2,
+                        field: 'edit', align: 'center', title: '操作', width: 170, fixed: true, formatter: function (value, row, index) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                return '<a class="neweditbutton" iconCls="icon-search" plain="true" onclick="openTopicDialog(\'' + row.SectionOrTopicId + '\')">查看内容</a><a class="neweditbutton" iconCls="icon-chat" plain="true" onclick="openReplyDialog(\'' + row.SectionOrTopicId + '\')">回复列表</a>'
+                            }
+                        }
+                    }
+
+                ], [
+                    {
+                        field: 's1', title: '发布', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x1) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="已发布，点击可更改为未发布" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Normal\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="未发布，点击可更改为已发布" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Normal\')"></span>';
+                                }
+                            }
+                        }
+                    }, {
+                        field: 's2', title: '置顶', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x8) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="置顶，点击可取消" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Top\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="点击可设为置顶" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Top\')"></span>';
+                                }
+                            }
+                        }
+                    }, {
+                        field: 's3', title: '精华', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x2) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="精华，点击可取消" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Digest\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="点击可设为精华" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Digest\')"></span>';
+                                }
+                            }
+                        }
+                    }, {
+                        field: 's4', title: '原创帖', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x4) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="原创帖，点击可取消" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Original\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="点击可设为原创帖" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Original\')"></span>';
+                                }
+                            }
+                        }
+                    }, {
+                        field: 's5', title: '资讯帖', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x10) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="资讯帖，点击可取消" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Discuss\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="点击可设为资讯帖" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Discuss\')"></span>';
+                                }
+                            }
+                        }
+                    }, {
+                        field: 's6', title: '求助帖', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x20) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="求助帖，点击可取消" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Help\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="点击可设为求助帖" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Help\')"></span>';
+                                }
+                            }
+                        }
+                    }, {
+                        field: 's7', title: '其他帖', width: 80, align: 'center', formatter: function (value, row) {
+                            if (row.SectionOrTopicId.substr(0, 1) != '-') {
+                                if (row.Status & 0x40) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:green;border-radius:50%;" title="其他帖，点击可取消" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Other\')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:14px;height:14px;vertical-align: middle;background-color:#ccc;border-radius:50%;" title="点击可设为其他帖" onclick="changeStatus(\'' + row.SectionOrTopicId + '\',\'Other\')"></span>';
+                                }
+                            }
+                        }
+                    }
+                ]],
+                onLoadSuccess: function () {
+                    $('.neweditbutton').removeClass('neweditbutton').linkbutton();
+                    $('.newtooltip').removeClass('newtooltip').tooltip();
+                    $(this).treegrid('fixRowHeight')
+                    $(this).treegrid('clearSelections')
+                },
+                onDblClickRow: function (row) {
+
+                    openTopicDialog(row.SectionOrTopicId);
+                },
+                onClickRow: function (row) {
+                    if (row.SectionOrTopicId.substr(0, 1) == '-') {
+                        $(this).treegrid('unselect', row.SectionOrTopicId)
+                    }
+                },
+                pagination: true
+            })
+
+            $('#editor').xheditor({
+                skin: 'nostyle', disabled: true, emotMark: false, tools: "Source,Preview,Fullscreen"
+            });
+        })
+        /*打开编辑窗口*/
+        function openTopicDialog(id) {
+            $('#topic_form').form('reset');
+
+
+
+            $.get('/Website/BBSTopicContent/' + id, {}, function (data) {
+                $('#topic_form').form('load', data);
+                $('#topic_dialog_show').dialog('setTitle', '帖子内容').dialog('open');
+            }, 'json');
+        }
+
+
+        /*关闭窗口*/
+        function closeDialog() {
+            $('#topic_form').form('reset');
+            $('#topic_dialog_show').dialog('close');
+        }
+
+
+        function removeTopic() {
+            var rows = $('#topic_datagrid_topic').treegrid('getSelections');
+            if (rows.length>0) {
+                $.messager.confirm('确认', '将删除'+rows.length+'篇帖子，相关回复也会被删除，请确认。', function (r) {
+                    if (r) {
+                        var ids = [];
+                        for (var i = 0; i < rows.length; i++) {
+                            ids.push(rows[i].SectionOrTopicId)
+                        }
+                        $.post('/Website/RemoveTopics', {ids:ids}, function (data) {
+                            if (data.resultCode == 1) {
+                                $('#topic_datagrid_topic').treegrid('reload');
+
+                            } else {
+                                $.messager.alert('错误', data.message, 'warning');
+                            }
+                        }, 'json')
+                    }
+                })
+
+            } else {
+                $.messager.alert('提示', '请选择要删除的帖子', 'info');
+            }
+
+        }
+        function changeStatus(id, status) {
+            $.post('/Website/ChangeBBSTopicStatus/' + id, { status: status }).success(function (data) {
+                if (data.resultCode == 1) {
+                    $('#topic_datagrid_topic').treegrid('update', {
+                        id: id,
+                        row: { Status: data.status }
+                    });
+                    $('.neweditbutton').removeClass('neweditbutton').linkbutton();
+                    $('.newtooltip').removeClass('newtooltip').tooltip();
+                    $('#topic_datagrid_topic').treegrid('fixRowHeight')
+                } else {
+                    $.messager.alert('错误', data.message, 'warning');
+                }
+              
+            })
+        }
+
+        $(function () {
+            $('#topic_datagrid_reply').datagrid({
+                pagination: true,
+                rownumbers: true,
+                border: false,
+                fit: true,
+                fitColumns: true,
+                toolbar: '#topic_toolbar_reply',
+                columns: [[
+                    {
+                        field: 'LoginName', align: 'center', title: '发帖人（账号|姓名|昵称）', width: 120, formatter: function (value, row, index) {
+
+                            return value + " | " + row.Name + " | " + row.DisplayName;
+                        }
+                    }, {
+                        field: 'CreateTime', title: '创建时间', align: 'center', width: 160, fixed: true, formatter: function (value, row) {
+
+                            if (value) {
+                                return $.getDate(value).Format('yyyy-MM-dd hh:mm:ss');
+                            }
+                        }
+                    }, {
+                        field: 'Content', halign: 'center', title: '内容摘要', width: 200, formatter: function (value) {
+                            return value.replace(/<[^>]*>|/g, "");
+                        }
+                    }, {
+                        field: 'edit', align: 'center', title: '操作', width: 80, fixed: true, formatter: function (value, row, index) {
+                            return '<a class="neweditbutton" iconCls="icon-search" plain="true" onclick="openReplyContentDialog(' + index + ')">查看</a>'
+                        }
+                    }
+                ]], onLoadSuccess: function () {
+                    $('.neweditbutton').removeClass('neweditbutton').linkbutton();
+
+                    $(this).treegrid('fixRowHeight')
+                },
+                onDblClickRow: function ( index) {
+                    openReplyContentDialog(index);
+                }
+            })
+        })
+        function removeReply() {
+            var rows = $('#topic_datagrid_reply').datagrid('getSelections');
+            if (rows.length > 0) {
+                $.messager.confirm('确认', '将删除' + rows.length + '条回复', function (r) {
+                    if (r) {
+                        var ids = [];
+                        for (var i = 0; i < rows.length; i++) {
+                            ids.push(rows[i].Id)
+                        }
+                        $.post('/Website/RemoveReplys', { ids: ids }, function (data) {
+                            if (data.resultCode == 1) {
+                                $('#topic_datagrid_reply').datagrid('reload');
+
+                            } else {
+                                $.messager.alert('错误', data.message, 'warning');
+                            }
+                        }, 'json')
+                    }
+                })
+
+            } else {
+                $.messager.alert('提示', '请选择要删除的帖子', 'info');
+            }
+        }
+        function openReplyDialog(id) {
+            var node = $('#topic_datagrid_topic').treegrid('find', id);
+            $('#topic_dialog_reply').dialog('open');
+            $('#topic_datagrid_reply').datagrid('options').url = '/Website/BBSReplys/' + id;
+            $('#topic_datagrid_reply').datagrid('load');
+
+        }
+        function openReplyContentDialog(index) {
+            var node = $('#topic_datagrid_reply').datagrid('getRows')[index];
+            setTimeout(function () {
+                $('#topic_form').form('load', { Content: node.Content });
+                $('#topic_dialog_show').dialog('setTitle', '回复内容').dialog('open');
+            }, 10)
+        }
+        $(function () {
+            $('#topic_dialog_reply').dialog({
+                buttons: [{
+                    text: '关闭', iconCls: 'icon-cancel', handler: function () {
+                        $('#topic_dialog_reply').dialog('close');
+                    }
+                }]
+            })
+        })
+    </script>
+}
+<div id="topic_datagrid_topic">
+    <div id="topic_toolbar_topic">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-remove" onclick="removeTopic();">删除</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){$('#topic_datagrid_topic').treegrid('load',{keyword:value})},width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#topic_datagrid_topic').treegrid('reload')">刷新</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+<div id="topic_dialog_show" style="padding:10px;width:800px;height:510px;" closed="true" class="easyui-dialog" modal="true" buttons="#topic_button_edit">
+    <form id="topic_form">
+
+        <textarea style="width:100%;height:380px;" id="editor" name="Content" disabled></textarea>
+    </form>
+    <div id="topic_button_edit">
+
+        <a class="easyui-linkbutton" iconcls="icon-cancel" plain="true" onclick="$('#topic_dialog_show').dialog('close')">关闭</a>
+    </div>
+</div>
+<div id="topic_dialog_reply"  modal="true" closed="true" title="回复列表" style="width:800px;height:510px;">
+    <div id="topic_datagrid_reply">
+        <div id="topic_toolbar_reply">
+            <table cellspacing="0" cellpadding="0">
+                <tbody>
+                    <tr>
+                        <td><a class="easyui-linkbutton" plain="true" iconcls="icon-remove" onclick="removeReply();">删除</a></td>
+                        <td><div class="datagrid-btn-separator"></div></td>
+                        <td>
+                            搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){$('#topic_datagrid_reply').datagrid('load',{keyword:value})},width:235" />
+                        </td>
+                        <td><div class="datagrid-btn-separator"></div></td>
+                        <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#topic_datagrid_reply').datagrid('reload')">刷新</a></td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>

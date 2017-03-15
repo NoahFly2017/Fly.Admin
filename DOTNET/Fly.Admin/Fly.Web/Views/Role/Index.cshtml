@@ -1,0 +1,215 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section script{
+    <script>
+        //打开并填充修改窗口
+        function OpenAndFillEditDialog(index) {
+            //后台功能实现后替换成远程获取
+            var row = $('#role_datagrid_roletable').datagrid('getRows')[index];
+            $.get('/Role/GetRolePermissionByRoleId', { id: row.Id }, function (data) {
+                $('#role_tree_rolepermission').tree('uncheck', $('#role_tree_rolepermission').tree('find', 0).target);
+
+                for (var i = 0; i < data.length; i++) {
+                    var node = $('#role_tree_rolepermission').tree('find', data[i].PermissionLineId);
+                    $('#role_tree_rolepermission').tree('check', node.target);
+                }
+                $('#role_form_edit').form('load', row);
+                $('#role_dialog_Platforminfo').dialog('open');
+            }, 'json')
+
+
+        }
+        //打开修改窗口，标题设成添加
+        function OpenAddDialog() {
+            $('#role_form_edit').form('reset');
+            $('#role_tree_rolepermission').tree('uncheck', $('#role_tree_rolepermission').tree('find', 0).target);
+            $('#role_dialog_Platforminfo').dialog('open').dialog('setTitle', '添加角色信息');
+        }
+        //提交进行修改或添加
+        function PostPlatformInfo() {
+            function GetPermissionLineIds() {
+                var checkedNode = $('#role_tree_rolepermission').tree('getChecked');
+                var pidArr = [];
+                for (var i = 0; i < checkedNode.length; i++) {
+                    if (checkedNode[i].id.toString().substr(0, 1) != "-" && checkedNode[i].id!=0) {
+                        pidArr.push(checkedNode[i].id)
+                    }
+                }
+                return pidArr;
+            }
+            function AjaxPostForm(action) {
+                $.ajaxStart();
+                $('#role_form_edit').ajaxSubmit({
+                    url: action,
+                    data: { permissionlineids: GetPermissionLineIds() },
+                    type: 'POST',
+                    beforeSubmit: function (data) { },
+                    success: function () {
+                        CloseEditDialog();
+                        $.ajaxEnd();
+                        $('#role_datagrid_roletable').datagrid('reload');
+                    }
+                });
+            }
+            if ($('#role_form_edit').form('validate')) {
+                if ($('#role_form_edit [name="Id"]').val() == "00000000-0000-0000-0000-000000000000") {
+                    AjaxPostForm('@Url.ActionPermission("Add", "Role")');
+                } else {
+                    AjaxPostForm('@Url.ActionPermission("edit","role")');
+                }
+            }
+        }
+
+        //关闭修改窗口
+        function CloseEditDialog() {
+            $('#role_form_edit').form('reset');
+            $('#role_dialog_Platforminfo').dialog('close');
+        }
+        //删除选中的
+        function Remove() {
+            var ids = $('#role_datagrid_roletable').datagrid('getSelectionsValues', 'Id');
+            if ($.isEmptyObject(ids)) {
+                $.messager.alert('提示', '请选择要删除的角色', 'info');
+            } else {
+                $.messager.confirm('提示', String.Format('确定要删除所选的{0}个角色？', ids.length), function (r) {
+                    if (r) {
+                        $.ajaxStart();
+                        $.post('/Role/Remove', { ids: ids }, function (data) {
+                            $.ajaxEnd();
+                            if (data.resultCode == 1) {
+                                $('#role_datagrid_roletable').datagrid('reload');
+                                $.slideMessage('删除成功', data.message)
+                            } else {
+                                $.messager.alert('提示', data.message, 'warning');
+                            }
+                        }, 'json');
+                    }
+                });
+            }
+        }
+        //初始化表
+        $(function () {
+            $('#role_datagrid_roletable').datagrid({
+                toolbar: '#toolbar',
+                fit: true,
+                border: false,
+                rownumbers: true,
+                pageSize:20,
+                fitColumns: true,
+                @Html.HasActionPermission("GetRoles", "Role", "url: '/Role/GetRoles',")
+                pagination: true,
+                onLoadSuccess: function () {
+                    $('a.plathform_linkbutton_edit').linkbutton({
+                        iconCls: 'icon-edit', plain: true
+                    })
+                    $(this).datagrid('fixRowHeight');
+                }, onDblClickRow: function (index, row) {
+                    OpenAndFillEditDialog(index);
+                }
+            })
+
+            $('#role_tree_rolepermission').tree({
+                fit: true,
+                checkbox: true,
+                lines: true,
+                border: true,
+                @Html.HasActionPermission("GetPermissionLinesTree", "permission", "url: '/permission/GetPermissionLinesTree'")
+            })
+        })
+    </script>
+}
+
+
+
+    <div id="toolbar">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td><a id="plathform_linkbutton_add" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true" onclick="OpenAddDialog()">添加</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a id="plathform_linkbutton_remove" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true" onclick="Remove()">删除</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" data-options="iconCls:'icon-undo',plain:true" onclick="$('#role_datagrid_roletable').datagrid('unselectAll')">取消选择</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#role_datagrid_roletable').datagrid('load',{keyword:value})
+                               },width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#role_datagrid_roletable').datagrid('reload')">刷新</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <table id="role_datagrid_roletable">
+        <thead>
+            <tr>
+                <th data-options="field:'Id',width:30,align:'center',hidden:true">ID</th>
+                <th data-options="field:'Name',width:120,align:'center'">角色名称</th>
+                <th data-options="field:'CustomAttribute',width:120,align:'center'">自定义属性</th>
+                <th data-options="field:'Remark',width:120,align:'center'">备注</th>
+                <th data-options="field:'edit',width:80,fixed:true,align:'center',formatter:function(value,rowData,rowIndex){ return '<a onclick=\'OpenAndFillEditDialog('+rowIndex+')\' class=\'plathform_linkbutton_edit\'>修改</a>';}">操作</th>
+            </tr>
+        </thead>
+
+    </table>
+
+    <style>
+        #role_dialog_Platforminfo tr td:first-child {
+            text-align: right;
+        }
+    </style>
+    <div id="role_dialog_Platforminfo" class="easyui-dialog" title="角色信息修改" style="width: 428px; overflow: hidden; height: 500px;padding:5px 10px" data-options="modal:true,closed:true,buttons:[{iconCls:'icon-ok',text:'确定',handler:function(){PostPlatformInfo()}},{iconCls:'icon-no',text:'取消',handler:function(){CloseEditDialog()}}]">
+        <form id="role_form_edit">
+            <table id="tb-user" class="tb" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr class="line-h30">
+                    <td class="t_r" style="height: 36px;">
+                        <input style="display:none;" name="Id" value="00000000-0000-0000-0000-000000000000" />
+                        角色名称：
+                    </td>
+                    <td align="left" style="height: 36px">
+                        <input class="easyui-validatebox" name="Name" type="text" data-options="validType:length[0,50],invalidMessage:'角色名称不能超过50个字符！',required:true" style="width: 300px" />
+                    </td>
+
+
+                </tr>
+                <tr>
+                    <td class="t_r" style="height: 36px;">
+                        自定义属性：
+                    </td>
+                    <td align="left" style="height: 36px">
+                        <input class="easyui-validatebox" name="CustomAttribute" type="text" data-options="validType:['length[0,254]','customattribute']" style="width: 300px" />
+                    </td>
+
+                </tr>
+                <tr>
+                    <td class="t_r" style="height: 36px;">
+                        备注：
+                    </td>
+                    <td align="left" style="height: 36px">
+                        <input class="easyui-validatebox" name="Remark" type="text" data-options="validType:length[0,254],invalidMessage:'备注不能超过254个字符！'" style="width: 300px" />
+                    </td>
+
+                </tr>
+                <tr>
+                    <td class="t_r" style="height: 36px;">
+                        权限分配：
+                    </td>
+                    <td align="left" style="height: 36px">
+                        <div class="easyui-panel" style="width:300px;height:300px;"><table id="role_tree_rolepermission" style="width:100%;"></table></div>
+
+                    </td>
+
+                </tr>
+
+            </table>
+        </form>
+    </div>
+
+

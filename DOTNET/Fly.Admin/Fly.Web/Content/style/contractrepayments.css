@@ -1,0 +1,70 @@
+﻿    .project-item-content table td p {
+            padding: 1px 5px;
+        }
+
+        .project-item-content table {
+            table-layout: auto;
+        }
+
+            .project-item-content table tbody td {
+                padding: 1px 0;
+            }
+
+            .project-item-content table tbody tr:nth-child(2n) td {
+                background-color: #f5f5f5;
+            }
+
+            .project-item-content table tbody tr:hover td {
+                background-color: #cee2f3;
+            }
+
+        .myhead {
+            border-right-color: transparent;
+        }
+
+        .project-item .topinfo {
+            border-bottom: 1px solid #ccc;
+            background: #e6e6e6;
+            overflow: hidden;
+        }
+
+            .project-item .topinfo div > span {
+                display: inline-block;
+                margin: 5px 2px;
+            }
+
+                .project-item .topinfo div > span .ssr {
+                    display: inline-block;
+                    width: 110px;
+                    text-align: right;
+                }
+
+                .project-item .topinfo div > span .slc {
+                    display: inline-block;
+                    width: 100px;
+                    text-align: center;
+                    border-bottom: 1px solid #666;
+                }
+
+                .project-item .topinfo div > span .slr {
+                    display: inline-block;
+                    width: 100px;
+                    text-align: right;
+                    border-bottom: 1px solid #666;
+                }
+
+        table.tb {
+            border-collapse: collapse;
+            border-width: 0;
+        }
+
+            table.tb th {
+                background-color: #eee;
+                text-align: center;
+                font-weight: normal;
+            }
+
+            table.tb td, table.tb th {
+                border-color: #ccc;
+                padding: 2px;
+            }

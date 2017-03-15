@@ -1,0 +1,260 @@
+﻿@section script{
+    <script>
+        $(function () {
+            $('#paymenttype_datagrid_paymenttype').datagrid({
+                toolbar: '#paymenttype_toolbar_paymenttype',
+                fit: true,
+                border: false,
+                rownumbers: true,
+                singleSelect: true,
+                fitColumns: true,
+                url: '/Website/PaymentTypes',
+                columns: [[
+                    {
+                        title: '支付方式名称', field: 'PaymentName', align: 'center', width: 100
+                    }, {
+                        title: '商户ID', field: 'MerchantID', align: 'center', width: 100
+                    }, {
+                        title: '结算周期', field: 'ClearingCycle', align: 'center', width: 100, formatter: function (value) {
+                            if (value != undefined) {
+                                return value + "天"
+                            }
+                        }
+                    }, {
+                        title: '充值（基本）利率', field: 'DefaultRate', align: 'center', width: 100, formatter: function (value) {
+                            if (value != undefined) {
+                                return value * 100 + "%"
+                            }
+                        }
+                    }, {
+                        title: '提现利率', field: 'WithdrawRate', align: 'center', width: 100, formatter: function (value) {
+                            if (value != undefined) {
+                                return value * 100 + "%"
+                            }
+                        }
+                    }, {
+                        title: '唯一标识', field: 'Identifier', align: 'center', width: 100
+                    }, {
+                        title: '单笔提现上线', field: 'PerWithdrawLimit', halign: 'center', align: 'right', width: 100, formatter: function (value) {
+                            if (value != undefined) {
+                                return '￥' + value.toFixed(2)
+                            }
+                        }
+                    }, {
+                        title: '状态', field: 'Enabled', align: 'center', width: 80, fixed: true, formatter: function (value, row, index) {
+                            if (value) {
+                                return '<span  style="cursor:pointer;display:inline-block;width:16px;height:16px;vertical-align: middle;" class=" icon-pass" title="启用，点击可禁用" onclick="changeStatus(' + index + ')"></span>';
+                            } else {
+                                return '<span   style="cursor:pointer;display:inline-block;width:16px;height:16px;vertical-align: middle;" class=" icon-nopass" title="禁用，点击可启用" onclick="changeStatus(' + index + ')"></span>';
+                            }
+                        }
+                    }, {
+                        field: 'edit', align: 'center', title: '操作', width: 80, fixed: true, formatter: function (value, row, index) {
+                            return '<a class="neweditbutton" iconCls="icon-edit" plain="true" onclick="openEditDialog(' + index + ')">编辑</a>'
+                        }
+                    }
+                ]],
+                pagination: true,
+                pageSize: 20,
+                onLoadSuccess: function () {
+                    $('.neweditbutton').removeClass('newlinkbutton').linkbutton();
+                    $(this).datagrid('fixRowHeight');
+                },
+                onDblClickRow: function ( index) {
+                    openEditDialog(index)
+                }
+            })
+        });
+        function changeStatus(index) {
+            var row = $('#paymenttype_datagrid_paymenttype').datagrid('getRows')[index];
+            $.post('/website/ChangePaymentTypeEnable/' + row.Id).success(function (data) {
+                if (data.resultCode == 1) {
+                    $('#paymenttype_datagrid_paymenttype').datagrid('updateRow', {
+                        index: index,
+                        row: {
+                            Enabled:data.enabled
+                        }
+                    });
+                    $('.neweditbutton').removeClass('newlinkbutton').linkbutton();
+                    $('#paymenttype_datagrid_paymenttype').datagrid('fixRowHeight');
+                } else {
+                    $.messager.alert('错误', data.message, 'warning')
+                }
+            })
+            
+        }
+        function removePaymentType() {
+            var row = $('#paymenttype_datagrid_paymenttype').datagrid('getSelected');
+            if (row == null) {
+                $.messager.alert('提示', '请选择要删除的支付方式', 'info');
+            } else {
+                $.messager.confirm('提示', '确定要删除所选支付方式？', function (r) {
+                    if (r) {
+                        $.post('/website/RemovePaymentType/' + row.Id).success(function (data) {
+                            if (data.resultCode == 1) {
+                                $('#paymenttype_datagrid_paymenttype').datagrid('reload');
+                            } else {
+                                $.messager.alert('错误', data.message, 'warning')
+                            }
+                        })
+                    }
+                })
+               
+            }
+        }
+        function openAddDialog() {
+            $('#paymenttype_form_edit').form('reset');
+            $('#paymenttype_dialog_edit').dialog('setTitle', '添加支付方式').dialog('open');
+
+        }
+        function openEditDialog(index) {
+            var row = $('#paymenttype_datagrid_paymenttype').datagrid('getRows')[index];
+            $('#paymenttype_form_edit').form('load', row);
+            $('#paymenttype_dialog_edit').dialog('setTitle', '编辑支付方式').dialog('open');
+
+        }
+        function save() {
+            if ($('#paymenttype_form_edit').form('validate')) {
+                var url = $('#hiddenid').val() == "00000000-0000-0000-0000-000000000000" ? '/website/AddPaymentType' : '/website/EditPaymentType';
+                $.ajaxStart();
+                $('#paymenttype_form_edit').ajaxSubmit({
+                    url: url,
+                    type:'post',
+                    success: function (data) {
+                        $.ajaxEnd();
+                        if (data.resultCode == 1) {
+                            $('#paymenttype_dialog_edit').dialog('close');
+                            $('#paymenttype_datagrid_paymenttype').datagrid('reload')
+                        } else {
+                            $.messager.alert('错误',data.message,'warning')
+                        }
+                    }
+                })
+            }
+        }
+    </script>
+}
+<div id="paymenttype_datagrid_paymenttype">
+    <div id="paymenttype_toolbar_paymenttype">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-add" onclick="openAddDialog();">添加</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-remove" onclick="removePaymentType();">删除</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){$('#paymenttype_datagrid_paymenttype').datagrid('load',{keyword:value})},width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#paymenttype_datagrid_paymenttype').datagrid('reload')">刷新</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<style>
+    #paymenttype_dialog_edit td.h {
+        text-align: right;
+        height: 30px;
+    }
+</style>
+<div id="paymenttype_dialog_edit" style="padding:10px;width:800px;height:470px;" closed="true" buttons="#payment_buttons_edit" class="easyui-dialog" modal="true">
+    <form id="paymenttype_form_edit">
+        <fieldset style="width:100%;border:1px solid #ccc;padding-bottom:10px;">
+            <legend style="margin-left:10px;">支付方式信息</legend>
+            <table style="width:100%;table-layout:fixed;">
+                <colgroup>
+                    <col style="width:12%;" />
+                    <col style="width:21%;" />
+                    <col style="width:10%;" />
+                    <col style="width:21%;" />
+                    <col style="width:15%;" />
+                    <col style="width:21%;" />
+                </colgroup>
+                <tr>
+                    <td class="h">支付方式名称：<input style="display:none;" hidden="hidden" name="Id" id="hiddenid" value="00000000-0000-0000-0000-000000000000" /></td>
+                    <td><input name="PaymentName" class="easyui-validatebox" type="text" validtype="length[1,20]" required style="width:95%;" /></td>
+                    <td class="h">唯一标识：</td>
+                    <td><input name="Identifier" class="easyui-validatebox" type="text" data-options="validType:['english','length[0,100]']" required style="width:95%;" /></td>
+                    <td class="h">结算周期：</td>
+                    <td><input name="ClearingCycle" class="easyui-numberbox" type="text" value="0" max="500" min="0" required style="width:95%;" suffix="天" /></td>
+                </tr>
+                <tr>
+                    <td class="h">商户ID：</td>
+                    <td><input name="MerchantID" class="easyui-validatebox" type="text" validtype="length[1,100]" required style="width:95%;" /></td>
+                    <td class="h">商户秘钥：</td>
+                    <td><input name="MerchantKey" class="easyui-validatebox" type="text" validtype="length[1,100]" required style="width:95%;" /></td>
+                    <td class="h">是否启用：</td>
+                    <td>
+                        <select name="Enabled" class="easyui-combobox" style="width:95%;" data-options="value:true,editable:false,panelHeight:60,data:[{value:true,text:'启用'},{value:false,text:'禁用'}]"></select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">充值费率：</td>
+                    <td><input name="DefaultRate" class="easyui-numberbox" type="text" min="0" max="1" precision="4" value="0" required style="width:95%;" /></td>
+                    <td class="h">提现费率：</td>
+                    <td><input name="WithdrawRate" class="easyui-numberbox" type="text" min="0" max="1" precision="4" value="0" required style="width:95%;" /></td>
+                    <td class="h">单笔提现手续费：</td>
+                    <td>
+                        <input name="WithdrawFee" class="easyui-numberbox" type="text" min="0" max="9999" required style="width:95%;" precision="2" value="0" buttontext="元" />
+                    </td>
+                </tr>
+                <tr>
+
+                    <td class="h">单笔提现上限：</td>
+                    <td>
+                        <input name="PerWithdrawLimit" class="easyui-numberbox" type="text" min="0" max="100000000" value="0" required style="width:95%;" buttontext="元" />
+                    </td>
+                    <td><span style="color:#aaa;">(上限为0为无限制)</span></td>
+                </tr>
+                <tr>
+                    <td class="h">支付地址：</td>
+                    <td colspan="5">
+                        <input name="MerchantPayUrl" style="resize:none;width:98.5%;" data-options="validType:['length[0,128]','url']" class="easyui-validatebox" type="text" />
+
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">查询地址：</td>
+                    <td colspan="5">
+                        <input name="MerchantQryUrl" style="resize:none;width:98.5%;" data-options="validType:['length[0,128]','url']" class="easyui-validatebox" type="text" />
+
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">手动返回地址：</td>
+                    <td colspan="5">
+                        <input name="MerchantRetUrl" style="resize:none;width:98.5%;" data-options="validType:['length[0,128]','url']" class="easyui-validatebox" type="text" />
+
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">自动返回地址：</td>
+                    <td colspan="5">
+                        <input name="MerchantAutoRetUrl" style="resize:none;width:98.5%;" data-options="validType:['length[0,128]','url']" class="easyui-validatebox" type="text" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">提供程序：</td>
+                    <td colspan="5">
+                        <input name="Provider" style="resize:none;width:98.5%;" data-options="validType:['length[0,256]'],required:true" class="easyui-validatebox" type="text" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="h">描述：</td>
+                    <td colspan="5">
+                        <textarea name="Description" style="resize:none;width:98.5%;height:40px;"></textarea>
+
+                    </td>
+                </tr>
+
+            </table>
+        </fieldset>
+    </form>
+
+    <div id="payment_buttons_edit">
+        <a class="easyui-linkbutton" iconcls="icon-save" plain="true" onclick="save()">保存</a>
+        <a class="easyui-linkbutton" iconcls="icon-cancel" plain="true" onclick="$('#paymenttype_dialog_edit').dialog('close')">关闭</a>
+    </div>
+</div>

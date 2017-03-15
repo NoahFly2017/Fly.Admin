@@ -1,0 +1,44 @@
+﻿@using Fly.Core.Models
+@model List<Fly.Web.Authorization.ViewPermissionGroup>
+
+
+
+
+<div class="startmenu -webkit-scroll">
+    <div class="center">
+        <div class="left">
+            <ul></ul>
+        </div>
+        <div class="right">
+
+        </div>
+    </div>
+    <div class="bottom">
+        <a href="/Employee/Logout" class="btn uicon logout">退出</a>
+        <a href="#" class="btn uicon password" onclick="$('#password_dialog_change form').form('reset');$('#password_dialog_change').dialog('open')">修改密码</a>
+    </div>
+</div>
+<script>
+    var menus =  @Html.Raw(Json.Encode(Model)) ;
+   
+    for (var i = 0; i < menus.length; i++) {
+      
+        if(menus[i].ParentId==null){
+            
+            $('.startmenu .left ul').append('<li class="nav-item uicon '+menus[i].Headshot+'"><a>'+menus[i].DisplayName+'</a></li>')
+            var submenu= $('<div class="nav-submenu"><ul></ul> </div>');
+            var urled=false;
+            for (var k = 0; k < menus.length; k++) {
+                if(menus[k].ParentId==menus[i].Id){
+                    if(!urled){
+                        $('.startmenu .left ul>li>a:last').attr('href',menus[k].Url);
+                        urled=true;
+                    }
+                    submenu.find('ul').append($('<li><a href="'+menus[k].Url+'">'+menus[k].DisplayName+'</a></li>'))
+                }
+            }
+            submenu.appendTo('.startmenu .right');
+        }
+    }
+   
+</script>

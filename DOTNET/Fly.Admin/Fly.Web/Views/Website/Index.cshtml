@@ -1,0 +1,34 @@
+﻿@{
+   
+    <script src="~/Scripts/Highcharts-4.0.4/js/highcharts.js"></script>
+    <script src="~/Scripts/Highcharts-4.0.4/js/modules/exporting.src.js"></script>
+    <script type="text/javascript">
+
+        function GetNum(str) {
+            str = str.substring(str.indexOf('\"numFound\":'), str.indexOf(',\"start\"'));
+            return parseInt(str.substr(str.indexOf(':') + 1));
+        }
+        function btnSele() {
+            $("#containerLine").html("");
+            $("#containerChart").html("");
+            BinData();
+        }
+
+     
+
+    </script>
+
+
+}
+
+       
+        <div id="containerLine" style="min-width: 400px; height: 400px; width:50%; margin: 0 auto; float:left;"></div>
+        <div id="containerChart" style="min-width: 400px; height: 400px; width: 50%; margin: 0 auto; float: left;"></div>
+
+
+    
+
+
+
+
+

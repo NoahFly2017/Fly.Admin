@@ -1,0 +1,76 @@
+﻿
+    #form_add .tabs-header, .tabs-tool {
+        background-color: #fff;
+    }
+
+    #form_add .tabs-header, .tabs-scroller-left, .tabs-scroller-right, .tabs li a.tabs-inner, .tabs li.tabs-selected a.tabs-inner {
+        border-color: #ccc;
+        border-bottom: 0;
+    }
+
+    #form_add .tabs {
+        border: 0;
+    }
+
+        #form_add .tabs li a.tabs-inner {
+            background: #efefef;
+        }
+
+        #form_add .tabs li.tabs-selected a.tabs-inner {
+            background: #fff;
+        }
+
+    #form_add fieldset {
+        float: left;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 5px;
+        margin: 5px;
+    }
+
+        #form_add fieldset legend {
+            margin: 0 10px 0 10px;
+            font-size: 12px;
+            line-height: 24px;
+        }
+
+            #form_add fieldset legend i {
+                vertical-align: middle;
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                background: url('/Content/images/folder.png');
+            }
+
+            #form_add fieldset legend span {
+                vertical-align: middle;
+            }
+
+        #form_add fieldset p {
+            text-align: center;
+            font-size: 14px;
+            color: #aaa;
+            line-height: 108px;
+            text-shadow: 1px 1px 1px #fff;
+        }
+
+        #form_add fieldset ul {
+            list-style: none;
+        }
+
+            #form_add fieldset ul li {
+                width: 100px;
+                height: 100px;
+                display: inline-block;
+                border: 1px solid #ddd;
+                margin: 3px;
+                background: #fff;
+                line-height: 100px;
+                text-align: center;
+            }
+
+                #form_add fieldset ul li img {
+                    vertical-align: middle;
+                    max-width: 100px;
+                    max-height: 100px;
+                }

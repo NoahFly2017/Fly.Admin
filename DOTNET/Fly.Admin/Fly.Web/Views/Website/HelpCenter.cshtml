@@ -1,0 +1,450 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+}
+
+
+@section script{
+    <script type="text/javascript">
+     
+        //批量移动
+        function MoveHelpCenter() {
+            if ($('#helpcenter_combo_helpcenterparent_moveto').combo('getValue') != "") {
+                var selectedrows = $('#helpcenter_treegrid_helpcentertable').treegrid("getSelections");
+                if (selectedrows.length != 0) {
+                    var selectedNodes = [];
+                    for (var i = 0; i < selectedrows.length; i++) {
+                        selectedNodes.push(selectedrows[i].Id);
+                    }
+                    $.ajaxStart();
+                    $.post('/Website/MoveHelpCenters', { "ids": selectedNodes, "parentid": $('#helpcenter_combo_helpcenterparent_moveto').combo('getValue') }, function (data) {
+                        $('#helpcenter_dialog_editdialog').dialog('close');
+                        $('#helpcenter_treegrid_helpcentertable').treegrid('reload');
+                        UpdateComboDate();
+                        FillHelpCenterQuickMoveCombo();
+                        if (data.resultCode != 1) {
+                            $.messager.alert('提示', data.message, 'warning');
+                        }
+                        $.ajaxEnd();
+                    }, 'json');
+                } else {
+                    $.messager.alert('提示', '请选择要移动的项', 'info');
+                }
+            } else {
+                $.messager.alert('提示', '请选择要移动到的父机构', 'info');
+            }
+        }
+        // 更新combo数据
+        var mydata;
+        function UpdateComboDate() {
+            $.ajax({
+                url: "/Website/HelpCenters?type=withroot",
+                dataType: 'json',
+                cache: false,
+                async: false,
+                success: function (data) {
+                    data.rows.push({ "HelpCenterName": "根节点", "Id": '00000000-0000-0000-0000-000000000000' })
+                    mydata = data;
+                }
+            })
+        }
+
+        //构建或重载修改对话框中的Combo
+        function FillHelpCenterComboExclude(exculdeOrgId) {
+            var copydata;
+            copydata = jQuery.extend(true, {}, mydata)
+            var isParsered = false;
+            try {
+                $('#helpcenter_treegrid_helpcenterparent_parent').treegrid('options');
+                isParsered = true;
+            } catch (e) {
+                $('#helpcenter_combo_helpcenterparent_parent').combo({
+                    required: true,
+                    editable: false,
+                    missingMessage: '请选择父级机构！'
+                })
+                $('#helpcenter_treegrid_helpcenterparent_parent').appendTo($('#helpcenter_combo_helpcenterparent_parent').combo('panel'));
+            }
+            $('#helpcenter_treegrid_helpcenterparent_parent').treegrid({
+                data: copydata,
+                idField: 'Id',
+                treeField: 'HelpCenterName',
+                border: false,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $(this).treegrid('unselectAll');
+                    $("#helpcenter_combo_helpcenterparent_parent").combo('setText', row.HelpCenterName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+
+            if (exculdeOrgId != undefined) {
+                $('#helpcenter_treegrid_helpcenterparent_parent').treegrid('remove', exculdeOrgId);
+            }
+        }
+
+        //构建或重载批量移动的Combo
+        function FillHelpCenterQuickMoveCombo() {
+            var copydata;
+            try {
+                $('#helpcenter_combo_helpcenterparent_moveto').combo('getValue');
+                isParsered = true;
+            } catch (e) {
+                $('#helpcenter_combo_helpcenterparent_moveto').combo({
+                    width: 200,
+                    editable: false,
+                    missingMessage: '请选择父级机构！',
+                    onShowPanel: function () {
+                        var selectedrows = $('#helpcenter_treegrid_helpcentertable').treegrid("getSelections");
+                        for (var i = 0; i < selectedrows.length; i++) {
+                            try {
+                                $('#helpcenter_treegrid_helpcenterparent_moveto').treegrid('remove', selectedrows[i].Id);
+                            } catch (e) {
+                            }
+                        }
+                    },
+                    onHidePanel: function () {
+                        //重新加载
+                        copydata = jQuery.extend(true, {}, mydata)
+                        $('#helpcenter_treegrid_helpcenterparent_moveto').treegrid('loadData', copydata);
+
+                    }
+                })
+                $('#helpcenter_treegrid_helpcenterparent_moveto').appendTo($('#helpcenter_combo_helpcenterparent_moveto').combo('panel'));
+            }
+            copydata = jQuery.extend(true, {}, mydata)
+            $('#helpcenter_treegrid_helpcenterparent_moveto').treegrid({
+                fit: true,
+                data: copydata,
+                idField: 'Id',
+                treeField: 'HelpCenterName',
+                border: false,
+                showHeader: true,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#helpcenter_combo_helpcenterparent_moveto").combo('setText', row.HelpCenterName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+        }
+
+        //打开修改窗口
+        function OpenHelpCenterEditWindow(orgId) {
+            FillHelpCenterComboExclude(orgId);
+           var  helpcenter_edit_row = $('#helpcenter_treegrid_helpcentertable').treegrid('find', orgId);
+            var parentNode = $('#helpcenter_treegrid_helpcentertable').treegrid('find', helpcenter_edit_row.ParentId);
+            //$('#helpcenter_validatebox_helpcentername').val(helpcenter_edit_row.HelpCenterName);
+            $('#helpcenter_form_edit').form('load', helpcenter_edit_row);
+            $('#helpcenter_dialog_editdialog').dialog('open');
+            $('#helpcenter_treegrid_helpcenterparent_parent').treegrid('unselectAll');
+            if (parentNode != null) {
+                $('#helpcenter_combo_helpcenterparent_parent').combo('setValue', parentNode.Id);
+                $('#helpcenter_combo_helpcenterparent_parent').combo('setText', parentNode.HelpCenterName);
+                $('#helpcenter_treegrid_helpcenterparent_parent').treegrid('select', parentNode.Id);
+            } else {
+                $('#helpcenter_combo_helpcenterparent_parent').combo('setValue', '00000000-0000-0000-0000-000000000000');
+                $('#helpcenter_combo_helpcenterparent_parent').combo('setText', '根节点');
+                $('#helpcenter_treegrid_helpcenterparent_parent').treegrid('select', '00000000-0000-0000-0000-000000000000');
+            }
+            $('#helpcenter_form_edit').form('validate');
+        }
+
+        //添加、修改窗口提交
+        function SubmitHelpCenter() {
+            if ($('#helpcenter_form_edit').form('validate')) {
+                var ajaxurl;
+                if ($('#helpcenter_form_edit').serializeObject().Id != '00000000-0000-0000-0000-000000000000') {
+                    ajaxurl = '/Website/EditHelpCenter';
+                } else {
+                    
+                    ajaxurl = '/Website/AddHelpCenter';
+                }
+          
+                $.ajaxStart();
+                $('#helpcenter_form_edit').ajaxSubmit({
+                    type:'post',
+                    url: ajaxurl, success: function (data) {
+                        
+                        $('#helpcenter_dialog_editdialog').dialog('close');
+                        $('#helpcenter_treegrid_helpcentertable').treegrid('reload');
+                        UpdateComboDate();
+                        FillHelpCenterQuickMoveCombo();
+                        if (data.resultCode != "1") {
+                            $.messager.alert('提示', data.message, 'warning');
+                        }
+                        $.ajaxEnd();
+                    }
+                })
+            }
+        }
+
+
+
+        $(function () {
+
+            $('.nav-item.userdepartment').addClass('active')
+            UpdateComboDate();
+            FillHelpCenterComboExclude();
+            FillHelpCenterQuickMoveCombo();
+
+            $('#helpcenter_dialog_editdialog').dialog({
+                closed: true,
+                modal: true,
+                buttons: [{
+                    iconCls: 'icon-ok',
+                    text: '提交',
+                    handler: function () {
+                        SubmitHelpCenter();
+                    }
+                }, {
+                    iconCls: 'icon-no',
+                    text: '取消',
+                    handler: function () {
+                        $('#helpcenter_dialog_editdialog').dialog('close');
+                    }
+                }
+                ],
+                title: "帮助中心",
+                onClose: function () {
+                    //DisableHelpCenterValidate();
+                },
+                onOpen: function () {
+                    //EnableHelpCenterValidate();
+                }
+            });
+
+            //构建组织架构表
+
+            $('#helpcenter_treegrid_helpcentertable').treegrid({
+                //url: "/HelpCenter/GetHelpCenterList",
+                url: "/Website/HelpCenters",
+                fit: true,
+                toolbar: '#toolbar',
+                //sortName: 'SN',
+              
+                //animate: false,
+                border: false,
+                collapsible: true,
+                fitColumns: true,
+                idField: 'Id',
+                treeField: 'HelpCenterName',
+                singleSelect: false,
+                onLoadSuccess: function (row, data) {
+                    $('.helpcenter_linbutton_rowedit').linkbutton({ plain: true, iconCls: 'icon-edit' });
+                    $(this).treegrid('clearSelections')
+                },
+                onClickRow: function () {
+                    $('#helpcenter_combo_helpcenterparent_moveto').combo('clear');
+                    $('#helpcenter_treegrid_helpcenterparent_moveto').treegrid('unselectAll');
+                }, onDblClickRow: function (row) {
+                    OpenHelpCenterEditWindow(row.Id);
+                }
+            });
+
+
+
+            //展开全部
+            $("#helpcenter_linkbutton_expendall").click(function () {
+                $('#helpcenter_treegrid_helpcentertable').treegrid('expandAll');
+
+            });
+
+            //折叠全部
+            $("#helpcenter_linkbutton_collapseall").click(function () {
+
+                $('#helpcenter_treegrid_helpcentertable').treegrid('collapseAll');
+            });
+
+            //添加组织架构
+            $("#helpcenter_linkbutton_add").click(function () {
+                $('#helpcenter_treegrid_helpcentertable').treegrid('unselectAll');
+                $('#helpcenter_form_edit').form('reset');
+                FillHelpCenterComboExclude();
+                $('#helpcenter_dialog_editdialog').dialog('open');
+            });
+
+
+
+            //删除组织架构
+            $("#helpcenter_linkbutton_remove").click(function () {
+                var nodes = $('#helpcenter_treegrid_helpcentertable').treegrid("getSelections");
+                if (nodes.length > 0) {
+                    $.messager.confirm('确认删除', '将删除所选组织架构及其下属架构，是否确认删除？', function (r) {
+                        if (r) {
+                            var arrayDeleteNodes = new Array();
+                            for (var i = 0; i < nodes.length; i++) {
+                                if (!arrayDeleteNodes.contains(nodes[i].Id)) {
+                                    arrayDeleteNodes.push(nodes[i].Id);
+                                }
+                                var childrenNodes = $('#helpcenter_treegrid_helpcentertable').treegrid("getChildren", nodes[i].Id);
+                                for (var k = 0; k < childrenNodes.length; k++) {
+                                    if (!arrayDeleteNodes.contains(childrenNodes[k].Id)) {
+                                        arrayDeleteNodes.push(childrenNodes[k].Id)
+                                    }
+                                }
+                            }
+                            var delectNodes = [];
+                            for (var i = 0; i < arrayDeleteNodes.length; i++) {
+
+                                delectNodes.push(arrayDeleteNodes[i]);
+
+                            }
+                            $.ajaxStart();
+                            $.post('/Website/RemoveHelpCenters', { "ids": delectNodes }, function (data) {
+                                if (data.resultCode == 1) {
+                                    $('#helpcenter_dialog_editdialog').dialog('close');
+                                    $('#helpcenter_treegrid_helpcentertable').treegrid('reload');
+                                    $.slideMessage('操作成功', data.message)
+                                } else {
+                                    $('#helpcenter_dialog_editdialog').dialog('close');
+                                    $.messager.alert('提示', data.message, 'warning');
+                                }
+                                UpdateComboDate();
+                                $.ajaxEnd();
+                            }, 'json')
+
+                        }
+                    })
+                } else {
+                    $.messager.alert('提示', '您没有选择任何数据', 'info');
+                }
+            });
+
+
+
+            //刷新组织结构表
+            $('#helpcenter_linkbutton_refresh').click(function () {
+                UpdateComboDate();
+                FillHelpCenterComboExclude();
+                FillHelpCenterQuickMoveCombo();
+                $('#helpcenter_treegrid_helpcentertable').treegrid('reload');
+            });
+
+
+            //搜索框回车事件
+            $('#helpcenter_input_keyword').bind('keydown', function (e) {
+                if (e.keyCode == 13) {
+                    $(document.activeElement).next().click();
+                    FillHelpCenterQuickMoveCombo();
+                }
+            })
+        });
+
+        function formatter(value, row) {
+            return '<a href="javascript:void(0)" class="helpcenter_linbutton_rowedit" id="helpcenter_linbutton_rowedit" onclick="OpenHelpCenterEditWindow(\'' + row.Id + '\')">修改</a>';
+        }
+    </script>
+
+}
+
+
+<div id="toolbar">
+    <table cellspacing="0" cellpadding="0">
+        <tbody>
+            <tr>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-add',plain:true" id="helpcenter_linkbutton_add">添加</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-remove',plain:true" id="helpcenter_linkbutton_remove">删除</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-undo',plain:true" id="helpcenter_linkbutton_unselect" onclick="$('#helpcenter_treegrid_helpcentertable').treegrid('unselectAll')">取消选择</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-collapse',plain:true" id="helpcenter_linkbutton_collapseall">折叠</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-expand',plain:true" id="helpcenter_linkbutton_expendall">展开</a>
+                </td>
+
+
+                <td><div class="datagrid-btn-separator"></div></td>
+
+                <td>
+                    搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#helpcenter_treegrid_helpcentertable').treegrid('load',{keyword:value})
+                               },width:235" />
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <span id="helpcenter_span_moveto"><a href="javascript:void(0)" id="helpcenter_linkbutton_moveto" onclick="MoveHelpCenter()" class="easyui-linkbutton" iconcls="icon-redo" plain="true">转移到</a><select id="helpcenter_combo_helpcenterparent_moveto"></select><table id="helpcenter_treegrid_helpcenterparent_moveto" fit="true"><thead><tr><th field="HelpCenterName" data-options="width:196">请选择目标父节点</th></tr></thead></table></span>
+
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" iconcls="icon-reload" plain="true" id="helpcenter_linkbutton_refresh">刷新</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<table id="helpcenter_treegrid_helpcentertable" style="min-width: 900px;">
+    <thead>
+        <tr>
+            <th data-options="field:'HelpCenterName',width:500,halign:'center'">频道名称</th>
+            <th data-options="field:'Title',width:500,align:'center'">页面标题</th>
+            <th data-options="field:'SN',width:500,align:'center'">排序号</th>
+            <th data-options="field:'CreateTime',width:200,align:'center',formatter:function(value){return $.formatJsonDate(value)}">创建时间</th>
+            <th data-options="field:'edit',width:120,align:'center',formatter:formatter">操作</th>
+        </tr>
+    </thead>
+</table>
+
+
+<div id="helpcenter_dialog_editdialog" style="padding: 5px; width: 330px; height: 245px;">
+    <form id="helpcenter_form_edit">
+        <table class="table_edit">
+            <tr>
+                <td class="tdal" style="height:35px;">
+                    上级帮助中心：
+                </td>
+                <td class="tdar">
+                    <input hidden="hidden" name="Id" value="00000000-0000-0000-0000-000000000000" />
+                    <select id="helpcenter_combo_helpcenterparent_parent" name="ParentId" style="width: 202px"></select>
+                    <table id="helpcenter_treegrid_helpcenterparent_parent" fit="true">
+                        <thead>
+                            <tr>
+                                <th field="HelpCenterName" data-options="width:196">请选择上级帮助中心</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </td>
+            </tr>
+           
+            <tr>
+                <td class="tdal" style="height:35px;">
+                    帮助中心名称：
+                </td>
+                <td class="tdar">
+                    <input name="HelpCenterName" type="text" class="easyui-validatebox"
+                           missingmessage="帮助中心名称！" validtype="length[0,120]" style="width: 200px;" invalidmessage="帮助中心名称不能超过120个字符！"
+                           required="true" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tdal" style="height:35px;">
+                    页面标题：
+                </td>
+                <td class="tdar">
+                    <input type="text" name="Title" class="easyui-validatebox" validtype="length[0,120]" style="width: 200px;" invalidmessage="标题不能超过120个字符！" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tdal" style="height:35px;">
+                    排序号：
+                </td>
+                <td class="tdar">
+                    <input name="SN" class="easyui-numberbox"
+                           missingmessage="帮助中心名称必须填写！" min="0" max="9999" style="width: 200px;" value="100" invalidmessage="帮助中心名称不能超过20个字符！"
+                           required="true" />
+                </td>
+            </tr>
+            <tr></tr>
+        </table>
+    </form>
+</div>

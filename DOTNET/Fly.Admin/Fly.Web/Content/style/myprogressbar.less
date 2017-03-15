@@ -1,0 +1,79 @@
+﻿.myprogressbar {
+    border: 1px solid #bbb;
+    height: 40px;
+    width: 300px;
+    overflow:hidden;
+    position:relative;
+    .createGradient(#fff,#eee);
+    .insetShadow(4px,#bbb);
+    .myprogressbar-value{
+        float:left;
+        height:100%;
+    }
+    
+     .myprogressbar-text{
+         display:table;
+         position:absolute;
+         top:0;
+         left:0;
+         height:100%;width:100%;
+         text-align:center;
+         font-weight:bold;
+         font-size:18px;
+         span{
+             display:table-cell;
+             vertical-align:middle;
+         }
+     }
+}
+.myprogressbar.uncompleted{
+     .myprogressbar-value{
+         .createGradient(#ffaf61,#ff9c61);
+         .outsetShadow(8px,#888);
+     }
+      .myprogressbar-text{
+        color:darken(#ff9c61,20);
+      }
+}
+.myprogressbar.completed{
+     .myprogressbar-value{
+         .createGradient(#1bc46c,#21ac1b);
+         .outsetShadow(8px,#888);
+     }
+      .myprogressbar-text{
+        color:darken(#1bc46c,15);
+      }
+}
+.myprogressbar.overrange{
+     .myprogressbar-value{
+         .createGradient(#ff1f44,#ff5975);
+         .outsetShadow(8px,#888);
+     }
+      .myprogressbar-text{
+        color:darken(#fff,0);
+      }
+}
+
+
+.createGradient(@fromcolor,@tocolor) {
+    background-color:@fromcolor;
+    -ms-filter: "progid: DXImageTransform.Microsoft.gradient(startColorstr = '@{fromcolor}', endColorstr = '@{tocolor}')";
+    background-image: -moz-linear-gradient(top, @fromcolor, @tocolor);
+    background-image: -ms-linear-gradient(top, @fromcolor, @tocolor);
+    background-image: -o-linear-gradient(top, @fromcolor, @tocolor);
+    background-image: -webkit-gradient(linear, center top, center bottom, from(@fromcolor), to(@tocolor));
+    background-image: -webkit-linear-gradient(top,@fromcolor, @tocolor);
+    background-image: linear-gradient(top,@fromcolor, @tocolor);
+}
+
+.insetShadow(@size,@color) {
+    -moz-box-shadow: inset 0px 0px @size @color;
+    -webkit-box-shadow: inset 0px 0px @size @color;
+    box-shadow: inset 0px 0px @size  @color;
+}
+
+.outsetShadow(@size,@color) {
+    -moz-box-shadow:  0px 0px @size @color;
+    -webkit-box-shadow:  0px 0px @size @color;
+    box-shadow:  0px 0px @size  @color;
+}

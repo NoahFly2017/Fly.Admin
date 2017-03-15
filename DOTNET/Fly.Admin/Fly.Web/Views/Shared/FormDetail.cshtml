@@ -1,0 +1,188 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title></title>
+    <link href="~/Scripts/easyui/themes/icon.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery.min.js"></script>
+    <script src="~/Scripts/easyui/jquery.easyui.min.js"></script>
+    <link href="~/Scripts/easyui/themes/default2/easyui.css" rel="stylesheet" />
+    <script src="~/Scripts/plugins.js"></script>
+
+    <link href="~/Content/style/table.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery.form.min.js"></script>
+    <style media="print" id="printcss">
+        * {
+            page-break-inside: avoid;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="noprint">
+        <div class="printoptions">
+
+            <input type="checkbox" id="pp" checked="checked" onchange="setOptions()" /> 打印图片
+
+            &emsp; &emsp;
+            <input type="checkbox" id="bq" checked="checked" onchange="setOptions()" /> 优化分页位置
+            &emsp; &emsp;
+            打印字体：<select id="ff" onchange="setOptions()">
+
+                <option>微软雅黑</option>
+                <option>宋体</option>
+                <option>黑体</option>
+            </select>
+            &emsp; &emsp;
+            宽度调整：<select id="kd" onchange="setOptions()">
+                <option value="1280">电脑浏览</option>
+                <option value="680">A4纵向</option>
+                <option value="960">A4横向</option>
+
+            </select>
+            &emsp; &emsp;
+            <button onclick="setOptions();print()">打印</button>
+
+        </div>
+    </div>
+    <style>
+        h2 {
+            font-size: 2em;
+            margin: 10px;
+        }
+
+        table {
+            table-layout: auto;
+        }
+
+            table td, table th {
+                padding: 2px;
+            }
+
+        textarea {
+            border: 0;
+            resize: none;
+            color: #666;
+        }
+
+        input[type="text"] {
+            color: #666;
+            height: 20px;
+            border: 0px solid #4791D2;
+        }
+
+            input[type="text"]:focus, textarea:focus {
+                outline-color: #4791D2;
+            }
+
+        select {
+            color: #666;
+            border: 0px solid #4791D2;
+            height: 22px;
+            display: inline-block;
+            outline-color: #4791D2;
+        }
+    </style>
+
+    <div id="orderform_@ViewBag.Id">
+        @Html.Raw(ViewBag.Html)
+    </div>
+    <div class="a-c noprint" style="padding-bottom:10px;">
+        <a class="easyui-linkbutton" iconcls="icon-undo" onclick="$('form')[0].reset()">重置</a>
+
+        &emsp;
+        <a class="easyui-linkbutton" iconcls="icon-save" onclick="save()">保存</a>
+    </div>
+    <script>
+        var replaceCollection=@Html.Raw(ViewBag.ReplaceCollection == null ? "{}" : ViewBag.ReplaceCollection);
+        function replace(){
+         
+            var html=document.getElementById('orderform_@ViewBag.Id').innerHTML;
+           
+                for (var key in replaceCollection){
+                    var reg=new RegExp("{#"+key+"}","g");
+                    html=html.replace(reg,replaceCollection[key]);
+                }
+                document.getElementById('orderform_@ViewBag.Id').innerHTML=html;
+           
+        }
+        if(!$.isEmptyObject(replaceCollection)){
+            replace();
+        }
+
+        //预处理html代码，检查外围form是否存在，不存的话补上
+        if($('form').length==0){
+            $('#orderform_@ViewBag.Id').append( $("<form></form>").append($('#orderform_@ViewBag.Id').children()));
+        }
+        //表单元素设置
+        var elesConfig = @Html.Raw(ViewBag.ElesConfig);
+
+        $.initFillForm('@ViewBag.Id', elesConfig,'@ViewBag.Controller')
+
+        function save(){
+            $('form').ajaxSubmit({
+
+                type: 'post',
+                success: function (data) {
+                    try {
+                        window.opener.afterFillForm(data);
+                    } catch (e) {
+                    }
+                    if(data.resultCode!=0){
+                        alert('保存成功');
+                        window.location.reload();
+                    }
+                }
+            })
+        }
+        function setOptions() {
+            $('table').css('max-width',$('#kd option:selected').val()+"px");
+            var css = "body, table {font-family: '" + $('#ff option:selected').text() + "';font-size: 12px;} ";
+            if (!$('#pp').prop('checked')) {
+                css += "img{display:none;}";
+            }
+            if ($('#bq').prop('checked')) {
+                css += "*{page-break-inside:avoid;}";
+            }
+
+            try {
+                $('#printcss')[0].innerHTML = css;
+            } catch (e) {
+                alert('无法应用打印设定，您的IE浏览器版本过低，建议您使用IE9以上的版本')
+            }
+            $('form .easyui-combobox').combobox('resize');
+            setPrintText();
+            function setPrintText(){
+                var names=[];
+                $('input:radio[name]').each(function(i,ele){
+                    if(!names.contains(ele.name)){
+                        names.push(ele.name);
+                        var checked=  $('input:radio[name="'+ele.name+'"]:checked');
+                        if(checked.length>0){
+
+                            $(ele).parent().parent().find('.forprint').text(checked.attr('value'));
+                        }
+                    }
+                });
+                $('select[name]').each(function(i,ele){
+                    if(!names.contains(ele.name)){
+                        names.push(ele.name);
+                        var checked=  $('select[name="'+ele.name+'"] option:selected').text();
+                        if(checked.length>0){
+
+                            $(ele).parent().parent().find('.forprint').text(checked);
+                        }
+                    }
+                })
+            }
+
+        }
+    </script>
+
+</body>
+</html>

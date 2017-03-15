@@ -1,0 +1,644 @@
+﻿@section script{
+
+    <script src="~/Scripts/juery.migrate.js"></script>
+    <script src="~/Scripts/xheditor/xheditor-1.2.1.min.js"></script>
+    <script src="~/Scripts/xheditor/xheditor_lang/zh-cn.js"></script>
+    <script>
+        $(function () {
+            $('#business_datagrid_company').datagrid({
+                fit: true,
+                border: false,
+                toolbar: '#business_toolbar_company',
+                fitColumns: true,
+                url: '/Business/GetCompanysList',
+                pageSize: 20,
+                singleSelect: true,
+                columns: [[
+                     { field: 'CompanyName', halign: 'center', title: '公司名称', width: 400 },
+                     { field: 'CompanyNo', halign: 'center', title: '公司注册号', width: 260 },
+
+                          { field: 'StockCode', halign: 'center', title: '上市代码', width: 200 },
+                           { field: 'StockName', halign: 'center', title: '上市简称', width: 200 },
+                              {
+                                  field: 'RegisteredArea', title: '地区', align: 'center', width: 160, formatter: function (value, rows) {
+                                      switch (value) {
+                                          case "340000":
+                                              return '<span style="color:gray;">--安徽省--</span>'
+                                              break;
+                                          case "110000":
+                                              return '<span style="color:gray;">--北京市--</span>'
+                                              break
+                                          case "500000":
+                                              return '<span style="color:gray;">--重庆市--</span>'
+                                              break;
+                                          case "350000":
+                                              return '<span style="color:gray;">--福建省--</span>'
+                                              break
+                                          case "440000":
+                                              return '<span style="color:gray;">--广东省--</span>'
+                                              break;
+                                          case "450000":
+                                              return '<span style="color:gray;">--广西省--</span>'
+                                              break
+                                          case "520000":
+                                              return '<span style="color:gray;">--贵州省--</span>'
+                                              break;
+                                          case "620000":
+                                              return '<span style="color:gray;">--甘肃省--</span>'
+                                              break
+                                          case "130000":
+                                              return '<span style="color:gray;">--河北省--</span>'
+                                              break;
+                                          case "230000":
+                                              return '<span style="color:gray;">--黑龙江省--</span>'
+                                              break
+                                          case "460000":
+                                              return '<span style="color:gray;">--海南省--</span>'
+                                              break;
+                                          case "410000":
+                                              return '<span style="color:gray;">--河南省--</span>'
+                                              break
+                                          case "420000":
+                                              return '<span style="color:gray;">--湖北省--</span>'
+                                              break;
+                                          case "430000":
+                                              return '<span style="color:gray;">--湖南省--</span>'
+                                              break
+                                          case "220000":
+                                              return '<span style="color:gray;">--吉林省--</span>'
+                                              break;
+                                          case "320000":
+                                              return '<span style="color:gray;">--江苏省--</span>'
+                                              break
+                                          case "360000":
+                                              return '<span style="color:gray;">--江西省--</span>'
+                                              break;
+                                          case "210000":
+                                              return '<span style="color:gray;">--辽宁省--</span>'
+                                              break
+                                          case "150000":
+                                              return '<span style="color:gray;">--内蒙古自治区--</span>'
+                                              break;
+                                          case "640000":
+                                              return '<span style="color:gray;">--宁夏回族自治区--</span>'
+                                              break
+                                          case "630000":
+                                              return '<span style="color:gray;">--青海省--</span>'
+                                              break;
+                                          case "140000":
+                                              return '<span style="color:gray;">--山西省--</span>'
+                                              break
+                                          case "310000":
+                                              return '<span style="color:gray;">--上海市--</span>'
+                                              break;
+                                          case "370000":
+                                              return '<span style="color:gray;">--山东省--</span>'
+                                              break
+                                          case "510000":
+                                              return '<span style="color:gray;">--四川省--</span>'
+                                              break
+
+                                          case "610000":
+                                              return '<span style="color:gray;">--陕西省--</span>'
+                                              break
+                                          case "120000":
+                                              return '<span style="color:gray;">--天津市--</span>'
+                                              break;
+                                          case "540000":
+                                              return '<span style="color:gray;">--西藏自治区--</span>'
+                                              break
+                                          case "650000":
+                                              return '<span style="color:gray;">--新疆维吾尔自治区--</span>'
+                                              break;
+                                          case "530000":
+                                              return '<span style="color:gray;">--云南省--</span>'
+                                              break
+                                          case "330000":
+                                              return '<span style="color:gray;">--浙江省--</span>'
+                                              break
+                                      }
+
+                                  }
+                              },
+                          { field: 'Listed', halign: 'center', title: '挂牌类型', width: 200 },
+                        {
+                            field: 'NextTime', title: '下次抓取时间', align: 'center', width: 160, fixed: true, formatter: function (value, rows) {
+                                if (value) {
+                                    return $.getDate(value).Format('yyyy-MM-dd hh:mm:ss');
+                                }
+                            }
+                        },
+                        {
+                            field: 'AddTime', title: '添加时间', align: 'center', width: 160, fixed: true, formatter: function (value, rows) {
+                                if (value) {
+                                    return $.getDate(value).Format('yyyy-MM-dd hh:mm:ss');
+                                }
+                            }
+                        },
+                        {
+                            field: 'State', align: 'center', title: '状态', width: 80, fixed: true, formatter: function (value, rows, index) {
+
+                                if (value) {
+                                    return '<span  style="cursor:pointer;display:inline-block;width:16px;height:16px;vertical-align: middle;" class=" icon-pass" title="正常抓取，点击修改为不抓取" onclick="changeStatus(' + index + ')"></span>';
+                                } else {
+                                    return '<span   style="cursor:pointer;display:inline-block;width:16px;height:16px;vertical-align: middle;" class=" icon-nopass" title="不抓取，点击修改抓取" onclick="changeStatus(' + index + ')"></span>';
+                                }
+                            }
+                        }, {
+                            field: 'edit', align: 'center', title: '操作', width: 80, fixed: true, formatter: function (value, row, index) {
+                                return '<a class="neweditbutton" iconCls="icon-edit" plain="true" onclick="openEditDialog(' + index + ')">编辑</a>'
+                            }
+                        }
+                        , {
+                            field: 'info', align: 'center', title: '查看', width: 80, fixed: true, formatter: function (value, row, index) {
+                                return '<a class="neweditbutton" iconCls="icon-search" plain="true" onclick="openShowDialog(' + index + ')">详情</a>'
+                            }
+                        }
+
+                ]],
+                onLoadSuccess: function () {
+                    $('.neweditbutton').removeClass('neweditbutton').linkbutton();
+                    $('.newtooltip').removeClass('newtooltip').tooltip();
+                    $(this).datagrid('fixRowHeight')
+                },
+                onDblClickRow: function (index, row) {
+                    openEditDialog(index);
+                },
+                rownumbers: true,
+                pagination: true
+            })
+
+            $('#editor').xheditor({
+                skin: 'nostyle', emotMark: false
+                //, tools:"Cut,Copy,Paste,Pastetext,|,Blocktag,Fontface,FontSize,Bold,Italic,Underline,Strikethrough,FontColor,BackColor,SelectAll,Removeformat,|,Align,List,Outdent,Indent,|,Link,Unlink,Anchor,Img,Flash,Media,Hr,Emot,Table,|,Source,Preview,Print,Fullscreen"
+                      , tools: "Cut,Copy,Paste,Pastetext,|,Blocktag,Fontface,FontSize,Bold,Italic,Underline,Strikethrough,FontColor,BackColor,SelectAll,Removeformat,|,Align,List,Outdent,Indent,|,Link,Unlink,Hr,Emot,Table,|,Source,Preview,Fullscreen"
+            });
+        })
+        /*打开编辑窗口*/
+        function openEditDialog(index) {
+            $('#company_form_edit').form('reset');
+            $('#company_dialog_edit').dialog('setTitle', '编辑工商数据').dialog('open');
+
+            var row = $('#business_datagrid_company').datagrid('getRows')[index];
+            $.get('/Business/GetCompany/' + row.Id, {}, function (data) {
+                $('#company_form_edit').form('load', data);
+            }, 'json');
+        }
+        /*打开显示数据*/
+        function openShowDialog(index) {
+
+            var row = $('#business_datagrid_company').datagrid('getRows')[index];
+            $.post('/Business/GetBaseInfo/' + row.Id, {}, function (data) {
+                if (data.resultCode == 1) {
+                    $('#company_dialog_show').dialog('setTitle', '查看工商数据').dialog('open');
+                    $("#EntName").html(data.baseinfo.EntName);
+                    $("#RegNo").html(data.baseinfo.RegNo);
+                    $("#Lerep").html(data.baseinfo.Lerep);
+                    $("#RegCap").html(data.baseinfo.RegCap);
+                    $("#EstDate").html($.getDate(data.baseinfo.EstDate).Format('yyyy-MM-dd'));
+                    $("#Dom").html(data.baseinfo.Dom);
+                    $("#OpFrom").html($.getDate(data.baseinfo.OpFrom).Format('yyyy-MM-dd'));
+                    if (data.baseinfo.OpTo != "") {
+                        $("#OpTo").html($.getDate(data.baseinfo.OpTo).Format('yyyy-MM-dd'));
+                    }
+                    else {
+                        $("#OpTo").html("");
+                    }
+                    $("#OpScope").html(data.baseinfo.OpScope);
+
+                    $("#RegOrg").html(data.baseinfo.RegOrg);
+                    $("#ApprDate").html($.getDate(data.baseinfo.ApprDate).Format('yyyy-MM-dd'));
+                    $("#RegState").html(data.baseinfo.RegState);
+
+                    //alert(data.chginfo.toSource());
+                    //$('#business_datagrid_chginfo').datagrid({
+                    //    width: 620,
+                    //    heigth: "auto",
+                    //    fitColumns: true,
+                    //    title: "变更信息",
+                    //    columns: [[
+                    //    {
+                    //        field: 'AltDate', title: '变更时间', align: 'center', width: 160, fixed: true, formatter: function (value, rows) {
+                    //            if (value) {
+                    //                return $.getDate(value).Format('yyyy-MM-dd');
+                    //            }
+                    //        }
+                    //    },
+                    //    {
+                    //        field: 'AltItem', halign: 'center', title: '变更项', width: 160, formatter: function (value, rows) {
+                    //            if (value) {
+                    //                return '<p  style="white-space: nowrap" title="' + value + '">' + value + '</p>';
+                    //            }
+                    //        }
+                    //    },
+                    //    {
+                    //        field: 'AltAf', halign: 'center', title: '变更前', width: 200, formatter: function (value, rows) {
+                    //            if (value) {
+                    //                return '<p title="' + value + '">' + value + '</p>';
+                    //            }
+                    //        }
+                    //    },
+                    //    {
+                    //        field: 'AltBe', halign: 'center', title: '变更后', width: 200, formatter: function (value, rows) {
+                    //            if (value) {
+                    //                return '<p title="' + value + '">' + value + '</p>';
+                    //            }
+                    //        }
+                    //    },
+                    //    ]]
+                    //});
+                    //$('#business_datagrid_chginfo').datagrid("loadData", data.chginfo);
+                    $('#company_table_chginfo').html('<tbody><tr><td colspan="4" style="text-align:center"><h2> 变更信息</h2></td></tr><tr><th width="100">变更时间</th><th width="100">变更项目</th><th>变更前</th><th>变更后</th></tr></tbody>"');
+                    if (data.chginfo.length > 0) {
+                        for (var i = 0, len = data.chginfo.length; i < len; i++) {
+                            $('#company_table_chginfo tbody').append("<tr>");
+                            $('#company_table_chginfo tbody').append(" <td>" + $.getDate(data.chginfo[i].AltDate).Format('yyyy-MM-dd') + "</td>");
+                            $('#company_table_chginfo tbody').append("<td>" + data.chginfo[i].AltItem + "</td>");
+                            $('#company_table_chginfo tbody').append("<td>" + data.chginfo[i].AltBe + "</td>");
+                            $('#company_table_chginfo tbody').append("<td>" + data.chginfo[i].AltAf + "</td>");
+                            $('#company_table_chginfo tbody').append("</tr>");
+                        }
+                    } else
+                    {
+                        $('#company_table_chginfo tbody').append("<tr>");
+                        $('#company_table_chginfo tbody').append("<td>没有变更信息</td>");
+                        $('#company_table_chginfo tbody').append("</tr>");
+                    }
+                    $('#company_table_leginfo').html('<tbody><tr><td colspan="4" style="text-align:center"><h2> 股东信息</h2></td></tr><tr><th width="100">股东类型</th><th width="100">股东</th><th>证件类型</th><th>证件号码</th></tr></tbody>');
+                    if (data.leglinfo.length > 0) {
+                        for (var i = 0, len = data.leglinfo.length; i < len; i++) {
+                            $('#company_table_leginfo tbody').append("<tr>");
+                            $('#company_table_leginfo tbody').append(" <td>" + data.leglinfo[i].InvType + "</td>");
+                            $('#company_table_leginfo tbody').append("<td>" + data.leglinfo[i].Inv + "</td>");
+                            $('#company_table_leginfo tbody').append("<td>" + data.leglinfo[i].BlicType + "</td>");
+                            $('#company_table_leginfo tbody').append("<td>" + data.leglinfo[i].BlicNo + "</td>");
+                            $('#company_table_leginfo tbody').append("</tr>");
+                        }
+                    } else {
+                        $('#company_table_leginfo tbody').append("<tr>");
+                        $('#company_table_leginfo tbody').append("<td>没有股东信息</td>");
+                        $('#company_table_leginfo tbody').append("</tr>");
+                    }
+                    $('#company_table_perinfo').html(' <tbody><tr><td colspan="4" style="text-align:center"><h2> 高管信息</h2></td></tr><tr><th width="100">姓名</th><th width="100">职务</th></tr></tbody>');
+                    if (data.perinfo.length > 0) {
+                        for (var i = 0, len = data.perinfo.length; i < len; i++) {
+                            $('#company_table_perinfo tbody').append("<tr>");
+                            $('#company_table_perinfo tbody').append(" <td>" + data.perinfo[i].Name + "</td>");
+                            $('#company_table_perinfo tbody').append("<td>" + data.perinfo[i].Position + "</td>");
+                            $('#company_table_perinfo tbody').append("</tr>");
+                        }
+                    } else {
+                        $('#company_table_perinfo tbody').append("<tr>");
+                        $('#company_table_perinfo tbody').append("<td>没有高管信息</td>");
+                        $('#company_table_perinfo tbody').append("</tr>");
+                    }
+                    
+                    
+                } else {
+                    $.messager.alert('错误', "没有抓取到该数据！", 'warning');
+                }
+
+                // $('#company_form_edit').form('load', data);
+            }, 'json');
+        }
+        /*更改状态*/
+        function changeStatus(index) {
+            var row = $('#business_datagrid_company').datagrid('getRows')[index];
+            $.post('/Business/ChangeCompanyStatus/' + row.Id, {}, function (data) {
+                if (data.resultCode == 1) {
+                    $('#business_datagrid_company').datagrid('updateRow', {
+                        index: index, row: {
+                            State: data.state,
+                            NextTime: data.nexttime
+                        }
+                    });
+                    $('.neweditbutton').removeClass('neweditbutton').linkbutton();
+                } else {
+                    $.messager.alert('错误', data.message, 'warning');
+                }
+            }, 'json')
+        }
+        /*打开添加窗口*/
+        function openAddDialog(index) {
+            $('#company_form_edit').form('reset');
+            $('#company_dialog_edit').dialog('setTitle', '添加工商数据').dialog('open');
+        }
+        /*关闭编辑窗口*/
+        function closeDialog() {
+            $('#company_form_edit').form('reset');
+            $('#company_dialog_edit').dialog('close');
+        }
+
+        /*保存*/
+        function save() {
+            if ($('#company_form_edit').form('validate')) {
+                var obj = $('#company_form_edit').serializeObject();
+                if (obj.CompanyName == '' && obj.CompanyNo == '') {
+                    $.messager.alert('提示', '请输入公司全称或者注册号', 'info');
+                } else {
+                    var url;
+                    if (obj.Id == '0') {
+                        url = '/Business/AddCompany';
+                    } else {
+                        url = '/Business/EditCompany';
+                    }
+                    closeDialog();
+                    $.post(url, obj, function (data) {
+                        if (data.resultCode == 1) {
+                            $('#business_datagrid_company').datagrid('reload');
+                        }
+                    })
+                }
+
+            }
+
+        }
+        function remove() {
+            var row = $('#business_datagrid_company').datagrid('getSelected');
+            if (row != null) {
+                $.messager.confirm('确认', '确认要删除该公司？', function (r) {
+                    if (r) {
+                        $.post('/Business/RemoveCompany/' + row.Id, {}, function (data) {
+                            if (data.resultCode == 1) {
+                                $('#business_datagrid_company').datagrid('reload');
+
+                            } else {
+                                $.messager.alert('错误', data.message, 'warning');
+                            }
+                        }, 'json')
+                    }
+                })
+
+            } else {
+                $.messager.alert('提示', '请选择要删除的公司', 'info');
+            }
+
+        }
+    </script>
+}
+<div id="business_datagrid_company">
+    <div id="business_toolbar_company">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-add" onclick="openAddDialog();">添加</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" plain="true" iconcls="icon-remove" onclick="window.remove();">删除</a></td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){$('#business_datagrid_company').datagrid('load',{keyword:value})},width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td><a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-reload'" onclick="$('#business_datagrid_company').datagrid('reload')">刷新</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+<div id="company_dialog_edit" style="padding:10px;width:460px;height:300px;" closed="true" class="easyui-dialog" modal="true" buttons="#company_button_edit">
+    <form id="company_form_edit">
+        <table class="company_table">
+            <tr>
+                <td colspan="2">
+                    <label style="color:red">优先输入公司注册号(公司注册号或公司全称必选填一项),地区请填写准确！</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input id="company_validatebox_id" type="text" style="display: none;" name="Id" value="0" />
+                </td>
+            </tr>
+            <tr>
+                <td class="l">公司全称：</td>
+                <td class="r">
+                    <input id="company_validatebox_name" class="easyui-validatebox" type="text" name="CompanyName" style="width: 300px;" />
+                </td>
+            </tr>
+            <tr>
+                <td class="l">注册号：</td>
+                <td class="r">
+                    <input id="company_validatebox_no" class="easyui-validatebox" type="text" name="CompanyNo" style="width: 300px;" />
+                </td>
+            </tr>
+            <tr>
+                <td class="l">上市简称：</td>
+                <td class="r">
+                    <input id="company_validatebox_stockname" class="easyui-validatebox" type="text" name="StockName" style="width: 300px;" />
+                </td>
+            </tr>
+            <tr>
+                <td class="l">上市代码：</td>
+                <td class="r">
+                    <input id="company_validatebox_stockcode" class="easyui-validatebox" type="text" name="StockCode" style="width: 300px;" />
+                </td>
+            </tr>
+            <tr>
+                <td class="l">地区：</td>
+                <td class="r">
+                    <select id="company_combobox_registeredarea" name="RegisteredArea" class="easyui-combobox" data-options="required:true,editable:false,width:212,panelHeight:200">
+                        <option value="340000">--安徽省--</option>
+                        <option value="110000">--北京市--</option>
+                        <option value="500000">--重庆市--</option>
+                        <option value="350000">--福建省--</option>
+                        <option value="440000">--广东省--</option>
+                        <option value="450000">--广西省--</option>
+                        <option value="520000">--贵州省--</option>
+                        <option value="620000">--甘肃省--</option>
+                        <option value="130000">--河北省--</option>
+                        <option value="230000">--黑龙江省--</option>
+                        <option value="460000">--海南省--</option>
+                        <option value="410000">--河南省--</option>
+                        <option value="420000">--湖北省--</option>
+                        <option value="430000">--湖南省--</option>
+                        <option value="220000">--吉林省--</option>
+                        <option value="320000">--江苏省--</option>
+                        <option value="360000">--江西省--</option>
+                        <option value="210000">--辽宁省--</option>
+                        <option value="150000">--内蒙古自治区--</option>
+                        <option value="640000">--宁夏回族自治区--</option>
+                        <option value="630000">--青海省--</option>
+                        <option value="140000">--山西省--</option>
+                        <option value="310000">--上海市--</option>
+                        <option value="370000">--山东省--</option>
+                        <option value="510000">--四川省--</option>
+                        <option value="610000">--陕西省--</option>
+                        <option value="120000">--天津市--</option>
+                        <option value="540000">--西藏自治区--</option>
+                        <option value="650000">--新疆维吾尔自治区--</option>
+                        <option value="530000">--云南省--</option>
+                        <option value="330000">--浙江省--</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="l">挂牌类型：</td>
+                <td class="r">
+                    <select name="Listed" class="easyui-combobox" data-options="required:true,editable:false,width:212,panelHeight:120">
+                        <option value="未上市">未上市</option>
+                        <option value="三板">三板</option>
+                        <option value="上交所">上交所</option>
+                        <option value="深交所">深交所</option>
+                    </select>
+                </td>
+            </tr>
+
+
+
+
+
+        </table>
+    </form>
+    <div id="company_button_edit">
+        <a class="easyui-linkbutton" iconcls="icon-save" plain="true" onclick="save()">保存</a>
+        <a class="easyui-linkbutton" iconcls="icon-cancel" plain="true" onclick="$('#company_dialog_edit').dialog('close')">关闭</a>
+    </div>
+</div>
+
+
+<div id="company_dialog_show" style="padding:10px;width:680px;height:500px;" closed="true" class="easyui-dialog" modal="true" buttons="#company_button_show">
+    <div>
+        <table class="company_table_1" style="table-layout: fixed; text-align: left">
+            <tr>
+                <td colspan="4" style="text-align:center">
+                    <h2> <label id="EntName">Fly.Admin快速开发框架</label></h2>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4" style="text-align:center">
+                    <label id="RegNo">1000000</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>法定代表人：</label>
+                </td>
+                <td><label id="Lerep">xxx</label></td>
+                <td>
+                    <label>注册资本：</label>
+                </td>
+                <td>
+                    <label id="RegCap">1000000</label>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label>成立日期：</label>
+                </td>
+                <td>
+                    <label id="EstDate">1000000</label>
+                </td>
+                <td>
+                    <label>住所：</label>
+                </td>
+                <td>
+                    <h4> <label id="Dom">1000000</label></h4>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label>营业期限自：</label>
+                </td>
+                <td>
+                    <h4> <label id="OpFrom">1000000</label></h4>
+                </td>
+                <td>
+                    <label>营业期限至：</label>
+                </td>
+                <td>
+                    <h4> <label id="OpTo">1000000</label></h4>
+                </td>
+            </tr>
+
+            <tr>
+                <td width=100px>
+                    <label>经营范围：</label>
+                </td>
+                <td colspan="3">
+                    <p id="OpScope">1000000</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>登记机关：</label>
+                </td>
+                <td>
+                    <label id="RegOrg">1000000</label>
+                </td>
+                <td>
+                    <label>核准日期：</label>
+                </td>
+                <td>
+                    <label id="ApprDate">1000000</label>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label>登记状态：</label>
+                </td>
+                <td>
+                    <label id="RegState">1000000</label>
+                </td>
+            </tr>
+        </table>
+    </div>
+ 
+    <div>
+        <table id="company_table_chginfo" border="1" cellpadding="3" cellspacing="1" width="100%" align="center" style="background-color: #b9d8f3;">
+            <tbody>
+                <tr>
+                    <td colspan="4" style="text-align:center">
+                        <h2> 变更信息</h2>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="100">变更时间</th>
+                    <th width="100">变更项目</th>
+                    <th>变更前</th>
+                    <th>变更后</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div>
+        <table id="company_table_leginfo" border="1" cellpadding="3" cellspacing="1" width="100%" align="center" style="background-color: #b9d8f3;">
+            <tbody>
+                <tr>
+                    <td colspan="4" style="text-align:center">
+                        <h2> 股东信息</h2>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="100">股东类型</th>
+                    <th width="100">股东</th>
+                    <th>证件类型</th>
+                    <th>证件号码</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <table id="company_table_perinfo" border="1" cellpadding="3" cellspacing="1" width="100%" align="center" style="background-color: #b9d8f3;">
+            <tbody>
+                <tr>
+                    <td colspan="4" style="text-align:center">
+                        <h2> 高管信息</h2>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="100">姓名</th>
+                    <th width="100">职务</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+        <div id="company_button_show">
+            <a class="easyui-linkbutton" iconcls="icon-cancel" plain="true" onclick="$('#company_dialog_show').dialog('close')">关闭</a>
+        </div>
+</div>
+
+

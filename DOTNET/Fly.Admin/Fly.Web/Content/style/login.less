@@ -1,0 +1,115 @@
+﻿@loginimgbase: '/Content/images';
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow: hidden;
+    background: url('@{loginimgbase}/loginbg2.jpg') top left repeat-x #d6dee0;
+    font-family: 'Microsoft YaHei',Arial;
+    font-size: 14px;
+    color: #555;
+
+    .main {
+        position: relative;
+        width: 960px;
+        margin: 0 auto;
+        height: 746px;
+        background: url('@{loginimgbase}/loginbg.jpg') top center no-repeat;
+
+        .title {
+            position: absolute;
+            left: 290px;
+            top: 205px;
+            width: 370px;
+
+            h2 {
+                color: #888;
+                font-size: 22px;
+                font-weight: normal;
+                float: left;
+            }
+
+            i {
+                color: #bbb;
+                font-size: 12px;
+                float: right;
+                margin-top: 13px;
+                font-style: normal;
+                text-shadow: 1px 1px 1px #fff;
+            }
+        }
+
+        form {
+            #errorMsg{
+                position:absolute;
+                top:200px;
+                left:40px;
+                width:300px;
+            }
+
+            /*background: red;*/
+            width: 370px;
+            position: absolute;
+            left: 290px;
+            top: 260px;
+
+            .input, .c_list_title {
+                display: inline-block;
+                width:60px;
+                position:relative;
+                line-height: 65px;
+                margin-left: 10px;
+                text-align:right;
+                input {
+                    width: 240px;
+                    padding: 6px;
+                    vertical-align: middle;
+                    border: 1px solid #ccc;
+                }
+            }
+            .input{
+               
+                  display: inline;
+            }
+            div img {
+                width: 75px;
+                height: 30px;
+            }
+        }
+
+        .btn {
+            display: block;
+            background: url('@{loginimgbase}/loginbtn.png');
+            width: 123px;
+            height: 40px;
+            margin: 10px auto 0px auto;
+            cursor: pointer;
+            outline:none;
+            border:none;
+        }
+
+        div.btn:hover {
+            background-position: -123px 0;
+        }
+
+        div.bottom {
+            text-align: center;
+            position: absolute;
+            width: 100%;
+            top: 580px;
+        }
+
+        .err {
+           
+            position: absolute;
+            left:260px;
+            top:0;
+            width:400px;
+            text-align: left;
+            color: #ff6a00;
+        }
+    }
+}

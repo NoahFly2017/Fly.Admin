@@ -1,0 +1,148 @@
+﻿body, table {
+    font-family: '微软雅黑';
+    font-size: 12px;
+    margin: 0;
+}
+
+
+a {
+    color: #666;
+}
+form {
+max-width:1280px;
+margin:0 auto;
+}
+table {
+    max-width: 1280px;
+ 
+   table-layout:fixed;
+    empty-cells: show;
+    border-collapse: collapse;
+    margin: 10px auto;
+    border: 1px solid #cad9ea;
+    color: #666;
+}
+
+p {
+    margin: 0;
+}
+
+.point {
+    color: red;
+    text-decoration: underline;
+}
+
+.pa-l {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 100px;
+    height:210px;
+}
+
+.pa-r {
+    position:absolute;
+    width: 99px;
+    border-left: 1px solid #cad9ea;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    height:200px;
+    padding:5px;
+}
+
+.a-l {
+    text-align: left;
+}
+
+.a-c {
+    text-align: center;
+}
+
+.a-r {
+    text-align: right;
+}
+
+table td, table th {
+    border: 1px solid #cad9ea;
+    padding: 5px;
+    position:relative;
+    height: 20px;
+    word-break:break-all;
+
+}
+
+td div.ch {
+  height:200px;
+  width:99%;
+  margin:0 ;
+  position:relative;
+}
+
+table th {
+    height: 20px;
+}
+
+tr.s td,tr.s th, td.s {
+    background-color: #f6fcff;
+}
+
+th.c, td.c {
+    font-weight: bold;
+    background-color: #e1eef3 !important;
+}
+
+
+
+h1, h2, h3 {
+    font-size: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.title {
+    background: #FFF;
+}
+
+    .title h1 {
+        line-height: 26px;
+        text-align: center;
+        background-repeat: repeat-x;
+        background-position: 0 0;
+        font-size: 16px;
+    }
+
+img {
+    max-width: 100% !important;
+}
+
+/*打印选项*/
+.printoptions {
+    padding: 5px;
+    background: #f4f4f4;
+    border-bottom: 1px solid #ccc;
+}
+
+.forprint {
+    display: none;
+}
+
+#reporter {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    outline: none;
+    min-height: 120px;
+    resize: none;
+}
+
+@media print {
+    .noprint {
+        display: none;
+    }
+
+    .forprint {
+        display: block;
+    }
+}

@@ -1,0 +1,163 @@
+﻿@section script{
+    <script src="~/Scripts/easyui/jquery.edatagrid.js"></script>
+    <script>
+        $(function () {
+            $('#ip_edatagrid_ip').edatagrid({
+                fit: true,
+                idField: 'Id',
+                url:'/Website/IPs',
+                fitColumns: true,
+                toolbar: '#ip_toolbar_ip',
+                border: false,
+                autoSave: true,
+                pagination:true,
+
+                saveUrl: '/Website/AddIP',
+                destroyUrl: '/Website/RemoveIP',
+                updateUrl: '/Website/EditIP',
+                destroyMsg: {
+                    norecord: {	// when no record is selected
+                        title: '提示',
+                        msg: '请选择要删除的教育经历'
+                    },
+                    confirm: {	// when select a row
+                        title: '提示',
+                        msg: '确定要删除该条IP黑名单？'
+                    }
+                },
+                columns: [[
+                    {
+                        field: 'IPv4', width: 150, title: 'IPv4地址', align: 'center', editor: {
+                            type: 'validatebox', options: {
+                                validType: ['length[0,15]', 'ipvfour']
+                            }
+                        }
+                    }, {
+                        field: 'IPv6', width: 150, title: 'IPv6地址', align: 'center', editor: {
+                            type: 'validatebox', options: {
+                                validType: 'ipvsix'
+                            }
+                        }
+                    }, {
+                        field: 'Remark', width: 150, title: '备注', align: 'center', editor: {
+                            type: 'validatebox', options: {
+                                validType: 'length[0,20]'
+                            }
+                        }
+                    }, {
+                        field: 'Enable', title: '状态', align: 'center', width: 140, fixed: true, formatter: function (value) {
+                            if (value) {
+                                return '<span style="width:14px;height:14px;display:inline-block;background:green;border-radius:50%;vertical-align: middle;"  title="启用" ></span>'
+                            } else {
+                                return '<span style="width:14px;height:14px;display:inline-block;background:red;border-radius:50%;vertical-align: middle;"  title="禁用" ></span>'
+                            }
+                        }, editor: {
+                            type: 'combobox', options: {
+                                required: true,
+                                editable:false,
+                                data: [{ value: true, text: '启用' }, { value: false, text: '禁用' }]
+                            }
+                        }
+                    }, {
+                        field: 'CreateTime', title: '创建时间', align: 'center', width: 140, fixed: true, formatter: function (value) {
+                            if (value) {
+                                return $.formatJsonDate(value);
+                            }
+                        }
+                    },
+                ]], onSave: function () {
+                    $(this).edatagrid('reload');
+                }, onDestroy: function () {
+                    $(this).edatagrid('reload');
+                }, onError: function (index, row) {
+                    cancelIPEdit()
+                    $.slideMessage('错误', row.msg);
+                }
+            })
+        })
+        function addIPRow() {
+            $('#ip_edatagrid_ip').edatagrid('addRow', {
+                row: {
+                    Enable:true
+                }
+            })
+        }
+
+        function removeIPRow() {
+            var row = $('#ip_edatagrid_ip').edatagrid('getSelected');
+
+            var index = $('#ip_edatagrid_ip').edatagrid('getRowIndex', row);
+
+            $('#ip_edatagrid_ip').edatagrid('destroyRow', index);
+        }
+
+        function saveIPRow() {
+            $('#ip_edatagrid_ip').edatagrid('saveRow');
+        }
+        function cancelIPEdit() {
+            $('#ip_edatagrid_ip').edatagrid('cancelRow');
+        }
+        function loadIPGrid() {
+            $('#ip_edatagrid_ip').datagrid('options').url = methodUrls.getIPs + nowExpandRowId;
+            $('#ip_edatagrid_ip').edatagrid('load');
+        }
+    </script>
+}
+
+
+<div id="ip_edatagrid_ip">
+
+
+    <div id="ip_toolbar_ip">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td>
+                        搜索：<input class="easyui-searchbox" prompt="请输入查询关键字" data-options="searcher:function(value){$('#ip_edatagrid_ip').edatagrid('load',{keyword:value})}" style="width:260px;" />
+                    </td>
+                    <td>
+                        <div class="datagrid-btn-separator"></div>
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-add" onclick="addIPRow()">添加</a>
+                    </td>
+                    <td>
+                        <div class="datagrid-btn-separator"></div>
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-remove" onclick="removeIPRow()">删除</a>
+                    </td>
+                    <td>
+                        <div class="datagrid-btn-separator"></div>
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-save" onclick="saveIPRow()">保存</a>
+                    </td>
+                    <td>
+                        <div class="datagrid-btn-separator"></div>
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-undo" onclick="cancelIPEdit()">取消编辑</a>
+                    </td>
+                    <td>
+                        <div class="datagrid-btn-separator"></div>
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-reload" onclick="$('#ip_edatagrid_ip').edatagrid('reload');">刷新</a>
+                    </td>
+
+                </tr>
+            </tbody>
+        </table>
+
+
+
+
+
+
+
+
+
+
+    </div>
+</div>

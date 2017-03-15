@@ -1,0 +1,422 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+@section script{
+
+    <script type="text/javascript">
+        $(function () {
+            $('.nav-item.permission').addClass('active')
+            //构建添加、修改窗口
+            $('#permissionline_dialog_editdialog').dialog({
+                closed: true,
+                buttons: [{
+                    iconCls: 'icon-ok',
+                    text: '提交',
+                    handler: function () {
+                        SubmitUser();
+                    }
+                }, {
+                    iconCls: 'icon-no',
+                    text: '取消',
+                    handler: function () {
+                        CloseUserDialog();
+                    }
+                }
+                ],
+                modal: true
+            });
+
+            UpdateComboDate();
+            InitAndFillUserQuickMoveCombo();
+            InitAndFillUserEditCombos();
+            $("#permissionline_treegrid_userlist").treegrid({
+                checkbox: true,
+                //页面列表初始化
+                @Html.HasActionPermission("getpermissionlines", "Permission", " url: '/Permission/GetPermissionLines',")
+                title: false,
+                animate: true,
+                nowrap: false,
+                pageSize:20,
+                collapsible: true,
+                toolbar: '#toolbar',
+                fitColumns: true,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                singleSelect: true,
+                pagination: true,
+                rowStyler: function (row) {
+                    if (row.Id.toString().substr(0,1)=="-") {
+                        return 'background:#f3f3f3;';
+                    }
+                },
+                onClickRow: function (row) {
+                    if (row.Id<0) {
+                        $(this).treegrid('unselect', row.EmployeeOrOrganizationId);
+                    }
+                },
+                onLoadSuccess: function () {
+                    $('.permissionline_linkbutton_edit').linkbutton({ plain: true, iconCls: 'icon-edit' });
+                }, onDblClickRow: function (row) {
+                      @Html.HasActionPermission("editpermissionline", "permission", "OpenAndFillUserEditDialog(row.Id);")
+                }
+            });
+
+            //全部展开
+            $("#permissionline_linkbutton_expandall").click(function () {
+                $('#permissionline_treegrid_userlist').treegrid('expandAll');
+            });
+
+            //全部收缩
+            $("#permissionline_linkbutton_collapseall").click(function () {
+                $('#permissionline_treegrid_userlist').treegrid('collapseAll');
+            });
+
+            //刷新权限项表
+            $('#permissionline_linkbutton_refresh').click(function () {
+                $('#permissionline_treegrid_userlist').treegrid('reload');
+            });
+
+            //取消选择
+            $('#permissionline_linkbutton_unselect').click(function () {
+                $('#permissionline_treegrid_userlist').treegrid('unselectAll');
+            });
+
+            //添加信息
+            $('#permissionline_linkbutton_add').click(function () {
+                $('#permissionline_dialog_editdialog').dialog({ title: '添加权限项', height: 340, closed: false });
+                $('#permissionline_form_edit').attr('data-ajaxurl', '@Url.ActionPermission( "AddPermissionLine","Permission")').form('reset');
+                $('#permissionline_form_edit').form('validate');
+                $('#permissionline_treegrid_permissiongroup').treegrid('unselectAll');
+            });
+
+            //删除
+            $('#permissionline_linkbutton_delete').click(function () {
+
+                var selectedIdsString = GetSelectionsIds();
+                if (selectedIdsString != "") {  
+                    $.messager.confirm('提示', '确定要删除所选用户？', function (r) {
+                        if (r) {
+                            $.post("@Url.ActionPermission("RemovePermissionLines", "Permission")", { "ids": selectedIdsString }, function (data) {
+                                $('#permissionline_treegrid_userlist').treegrid('load');
+                                if (data.resultCode != 1) {
+                                    $.messager.alert('提示', data.message, 'warning');
+                                }
+                            }, 'json')
+                        }
+                    })
+                } else {
+                    $.messager.alert('提示', '请选择要删除的角色', 'info');
+                }
+            })
+
+
+
+        })
+
+
+        // 更新combo数据
+        var mydata;
+        function UpdateComboDate() {
+            $.ajax({
+                @Html.HasActionPermission("GetPermissionGroups", "Permission"," url: \"/Permission/GetPermissionGroups\",")
+                dataType: 'json',
+                cache: false,
+                async: false,
+                success: function (data) {
+                    mydata = data;
+                }
+            })
+        }
+        function InitAndFillUserQuickMoveCombo() {
+            //防止重复构造combo
+            var isParsered = false;
+            try {
+                $('#permissionline_combo_permissiongroup_moveto').combo('getValue');
+                isParsered = true;
+            } catch (e) { }
+            if (!isParsered) {
+                $('#permissionline_combo_permissiongroup_moveto').combo({
+                    width: 200,
+                    panelHeight: 400,
+                    editable: false,
+                    required: false,
+                    missingMessage: '请选择父级机构！',
+                    onShowPanel: function () {
+                        $('#permissionline_treegrid_permissiongroup_moveto').treegrid('unselectAll');
+                    }
+                })
+            }
+            var copydata = $.extend(true, {}, mydata);
+            $('#permissionline_treegrid_permissiongroup_moveto').appendTo($('#permissionline_combo_permissiongroup_moveto').combo('panel'));
+            $('#permissionline_treegrid_permissiongroup_moveto').treegrid({
+                fit: true,
+                data: copydata,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                border: false,
+                showHeader: true,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#permissionline_combo_permissiongroup_moveto").combo('setText', row.DisplayName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+        }
+
+        function InitAndFillUserEditCombos() {
+            $('#permissionline_combo_permissiongroup_parent').combo({
+                required: true,
+                width: 212,
+                panelHeight: 400,
+                editable: false
+            })
+            var copydata = $.extend(true, {}, mydata);
+            $('#permissionline_treegrid_permissiongroup_parent').appendTo($('#permissionline_combo_permissiongroup_parent').combo('panel'));
+            $('#permissionline_treegrid_permissiongroup_parent').treegrid({
+                fit: true,
+                data: copydata,
+                idField: 'Id',
+                fitColumns: true,
+                treeField: 'DisplayName',
+                border: false,
+                showHeader: true,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#permissionline_combo_permissiongroup_parent").combo('setText', row.DisplayName).combo('setValue', row.Id).combo('hidePanel');
+
+                }
+            })
+
+        }
+
+
+        function GetSelectionsIds() {
+            var selectedrows = $('#permissionline_treegrid_userlist').treegrid("getSelections");
+            var selectedIdsString = "";
+            if (selectedrows.length != 0) {
+                var selectedIdsString = "";
+                for (var i = 0; i < selectedrows.length; i++) {
+                    if (i == selectedrows.length - 1) {
+                        selectedIdsString += selectedrows[i].Id;
+                    } else {
+                        selectedIdsString += selectedrows[i].Id + ",";
+                    }
+                }
+            }
+            return selectedIdsString;
+        }
+
+        //批量移动
+        function MovePermissionLines() {
+            if ($('#permissionline_combo_permissiongroup_moveto').combo('getValue') != "") {
+                var selectedIdsString = GetSelectionsIds();
+                if (selectedIdsString != "") {
+                   
+                    $.ajax({
+                        data: { "ids": selectedIdsString, "parentid": $('#permissionline_combo_permissiongroup_moveto').combo('getValue') },
+                        url: '@Url.ActionPermission("MovePermissionLines", "Permission")',
+                        type: "POST",
+                        dataType: "json",
+                        cache: false,
+                        async: false,
+                        success: function (data) {
+                            $('#permissionline_treegrid_userlist').treegrid('reload');
+                            $('#permissionline_combo_permissiongroup_moveto').combo('clear');
+                            if (data.resultCode != "1") {
+                                $.messager.alert('提示', data.message, 'warning');
+                            }
+                        }
+                    })
+                } else {
+                    $.messager.alert('提示', '请选择要移动的用户', 'info');
+                }
+            } else {
+                $.messager.alert('提示', '请选择要移动到的父机构', 'info');
+            }
+        }
+
+        //打开修改窗口并为修改窗口填充数据
+        function OpenAndFillUserEditDialog(Id) {
+            var userdata = $('#permissionline_treegrid_userlist').treegrid('find', Id);
+            $('#permissionline_treegrid_permissiongroup_parent').treegrid('unselectAll').treegrid('select', userdata.GroupId);
+           var node=  $('#permissionline_treegrid_permissiongroup_parent').treegrid('find', userdata.GroupId);
+            $('#permissionline_form_edit').form('load', userdata)
+            $('#permissionline_combo_permissiongroup_parent').combo('setValue', node.Id).combo('setText', node.DisplayName);
+            
+            $('#permissionline_dialog_editdialog').dialog('setTitle', '修改权限项信息').dialog('open').dialog('options').title = '修改权限项信息';
+            $('#permissionline_form_edit').attr('data-ajaxurl', '@Url.ActionPermission("EditPermissionLine", "Permission")').form('validate');
+
+
+        }
+
+        //关闭修改窗口
+        function CloseUserDialog() {
+            $('#permissionline_dialog_editdialog').dialog('close');
+        }
+        function SubmitUser() {
+            if ($('#permissionline_form_edit').form('validate')) {
+                $('#permissionline_form_edit').ajaxSubmit({
+                    url: $('#permissionline_form_edit').attr('data-ajaxurl'),
+                    data: {},
+                    type: "POST",
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#permissionline_treegrid_userlist').treegrid('reload');
+                        $('#permissionline_dialog_editdialog').dialog('close');
+                        if (data.resultCode == 1) {
+                            $.slideMessage('提示', data.message);
+                        }
+
+                    }
+                })
+            }
+        }
+        function formatter(value, row) {if(row.Id.toString().substr(0,1)!='-' ){ return '<a class="permissionline_linkbutton_edit" href="javascript:void(0)" onclick="OpenAndFillUserEditDialog(\''+row.Id+'\')">修改</a>' }}
+    </script>
+
+}
+
+
+    <style>
+        .permissionline_usertable td.l {
+            padding-top: 5px;
+            width: 100px;
+            line-height: 20px;
+            text-align: right;
+        }
+
+        .permissionline_usertable td.r {
+            padding-top: 5px;
+            width: 220px;
+            height:30px;
+            line-height: 20px;
+        }
+
+      
+           
+    </style>
+    <div id="toolbar">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td>
+                            @Html.ActionLinkPermission("添加", "permissionline_linkbutton_add", new { href = "javascript:void(0)", @class = "easyui-linkbutton", plain = "true", iconcls = "icon-add", id = "permissionline_linkbutton_add" })
+                            @*<a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-add" id="permissionline_linkbutton_add">添加</a>*@
+</td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        @Html.ActionLinkPermission("删除", "permissionline_linkbutton_delete", new { href = "javascript:void(0)", @class = "easyui-linkbutton", plain = "true", iconcls = "icon-remove", id = "permissionline_linkbutton_delete" })
+                        @*<a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-remove" id="permissionline_linkbutton_delete">删除</a>*@
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-undo" id="permissionline_linkbutton_unselect">取消选择</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-collapse" id="permissionline_linkbutton_collapseall">折叠</a>
+
+
+
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" iconcls="icon-expand" id="permissionline_linkbutton_expandall">展开</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+
+
+                    <td>
+                        <span id="permissionline_span_transferuser">
+                            <a href="javascript:void(0)" onclick="MovePermissionLines()" id="permissionline_linkbutton_transferuser" class="easyui-linkbutton" iconcls="icon-redo" plain="true">转移到</a>
+                            <select id="permissionline_combo_permissiongroup_moveto" style="height: 20px; width: 200px"></select>
+                            <table id="permissionline_treegrid_permissiongroup_moveto" fit="true">
+                                <thead>
+                                    <tr>
+                                        <th field="DisplayName" data-options="width:180">请选择目标节点</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </span>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#permissionline_treegrid_userlist').treegrid('load',{keyword:value})
+                               },width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" iconcls="icon-reload" plain="true" id="permissionline_linkbutton_refresh">刷新</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <table id="permissionline_treegrid_userlist" title="用户管理" style="min-width: 900px;" border="false" fit="true">
+        <thead>
+            <tr>
+
+                <th field="DisplayName" data-options="width:340,fixed:true,halign:'center'">权限项名称</th>
+
+                <th field="Tag" data-options="width:140,align:'center'">HTML标志名</th>
+                <th field="Url" data-options="width:140,align:'center'">权限路径</th>
+                @{
+                    if (HtmlExtensions.HasActionPermission("editpermissionline", "permission")) 
+                    {
+                        <th field="edit" data-options="width:80,fixed:true,align:'center',formatter: formatter">操作</th>
+                    }
+                }
+                
+             
+            </tr>
+        </thead>
+    </table>
+
+    <div id="permissionline_dialog_editdialog" class="easyui-dialog" style=" width: 350px; height: 235px;">
+        <form id="permissionline_form_edit">
+            <table class="permissionline_usertable">
+                <tr>
+                    <td>
+                        <input type="text" style="display: none;" name="Id" value="00000000-0000-0000-0000-000000000000" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="l">所属组织：</td>
+                    <td class="r">
+                        <select id="permissionline_combo_permissiongroup_parent" name="GroupId"></select>
+                        <table id="permissionline_treegrid_permissiongroup_parent" fit="true">
+                            <thead>
+                                <tr>
+                                    <th field="DisplayName" data-options="required:true,editable:false,width:180">请选择目标节点</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="l">权限项名称：</td>
+                    <td class="r">
+                        <input type="text" class="easyui-validatebox"
+                               missingmessage="权限项名称必须填写！" validtype="length[0,20]" style="width: 210px;" name="DisplayName" invalidmessage="权限项名称不能超过20个字符！"
+                               required="true" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="l">HTML标志名：</td>
+                    <td class="r">
+                        <input type="text" class="easyui-validatebox" style="width: 210px;" required="true" validtype="length[0,224]" invalidmessage="HTML标志名不能超过224个字符！" missingmessage="HTML标志名必须填写！" name="Tag" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="l">权限路径：</td>
+                    <td class="r">
+                        <input name="Url" type="text" class="easyui-validatebox" style="width: 210px;" required="true" validtype="length[0,224]" invalidmessage="权限路径不能超过224个字符！" missingmessage="权限路径必须填写！" />
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>

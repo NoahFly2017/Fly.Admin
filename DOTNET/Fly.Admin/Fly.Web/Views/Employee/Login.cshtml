@@ -1,0 +1,68 @@
+﻿@model Fly.Web.Models.LoginViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>后台登入</title>
+    <link href="/Scripts/easyui/themes/default/tooltip.css" rel="stylesheet" />
+    <script src="/Scripts/jquery.min.js"></script>
+    <link href="/Content/style/login.css" rel="stylesheet" />
+    <script src="/Scripts/easyui/easyloader.js"></script>
+  
+</head>
+<body>
+
+    <div class="main">
+        <div class="title">
+            <h2>欢迎使用管理后台</h2>
+            <i> Management System</i>
+        </div>
+        @using (Html.BeginForm("Login", "Employee", new { @returnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { @id = "fm_submit" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new {  @id = "errorMsg" })
+            <div class="form-group">
+                @Html.LabelFor(model => model.UserName, htmlAttributes: new { @class = "c_list_title" })
+                <div class="input">
+                    @Html.EditorFor(model => model.UserName, new { htmlAttributes = new { @Value = "admin", @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.UserName, "", new { @class = "err" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "c_list_title" })
+                <div class="input">
+                    @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @Value = "123456a", @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Password, "", new { @class = "err" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                    <div class="checkbox" style="padding-left:90px;">
+                      
+                        @Html.ValidationMessageFor(model => model.RememberMe, "", new { @class = "err" })
+                        @Html.EditorFor(model => model.RememberMe) 
+                         @Html.LabelFor(model => model.RememberMe, htmlAttributes: new {  })
+                    </div>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="" class="btn" />
+            </div>
+
+        }
+
+        <div class="bottom">
+            <img src="/fly.ico" style=" vertical-align:middle;height:16px;line-height:20px;" /><span style=" vertical-align:middle; margin-left:5px;">Fly.Admin快速开发框架</span>
+        </div>
+    </div>
+
+
+  
+</body>
+</html>

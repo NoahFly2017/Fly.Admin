@@ -1,0 +1,426 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+  
+}
+
+
+@section script{
+    <script type="text/javascript">
+        var organization_edit_row;
+        //批量移动
+        function MoveOrganization() {
+            if ($('#organization_combo_organizationparent_moveto').combo('getValue') != "") {
+                var selectedrows = $('#organization_treegrid_organizationtable').treegrid("getSelections");
+                if (selectedrows.length != 0) {
+                    var selectedNodes = [];
+                    for (var i = 0; i < selectedrows.length; i++) {
+                        selectedNodes.push(selectedrows[i].Id);
+                    }
+                    $.ajaxStart();
+                    $.post('@Url.ActionPermission("Move","Organization")', { "ids": selectedNodes, "parentid": $('#organization_combo_organizationparent_moveto').combo('getValue') }, function (data) {
+                        $('#organization_dialog_editdialog').dialog('close');
+                        $('#organization_treegrid_organizationtable').treegrid('reload');
+                        UpdateComboDate();
+                        FillOrganizationQuickMoveCombo();
+                        if (data.resultCode != 1) {
+                            $.messager.alert('提示', data.message, 'warning');
+                        }
+                        $.ajaxEnd();
+                    }, 'json');
+                } else {
+                    $.messager.alert('提示', '请选择要移动的项', 'info');
+                }
+            } else {
+                $.messager.alert('提示', '请选择要移动到的父机构', 'info');
+            }
+        }
+        // 更新combo数据
+        var mydata;
+        function UpdateComboDate() {
+            $.ajax({
+                //url: "/Organization/GetOrganizationList?type=withroot",
+                @Html.HasActionPermission("GetOrganizationList", "Organization","url: \"/Organization/GetOrganizationList?type=withroot\",")
+                dataType: 'json',
+                cache: false,
+                async: false,
+                success: function (data) {
+
+                    data.rows.push({ "DisplayName": "根节点", "Id": '00000000-0000-0000-0000-000000000000' })
+                    mydata = data;
+                }
+            })
+        }
+
+        //构建或重载修改对话框中的Combo
+        function FillOrganizationComboExclude(exculdeOrgId) {
+            var copydata;
+            copydata = jQuery.extend(true, {}, mydata)
+            var isParsered = false;
+            try {
+                $('#organization_treegrid_organizationparent_parent').treegrid('options');
+                isParsered = true;
+            } catch (e) {
+                $('#organization_combo_organizationparent_parent').combo({
+                    required: true,
+                    editable: false,
+                    missingMessage: '请选择父级机构！'
+                })
+                $('#organization_treegrid_organizationparent_parent').appendTo($('#organization_combo_organizationparent_parent').combo('panel'));
+            }
+            $('#organization_treegrid_organizationparent_parent').treegrid({
+                data: copydata,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                border: false,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $(this).treegrid('unselectAll');
+                    $("#organization_combo_organizationparent_parent").combo('setText', row.DisplayName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+           
+            if (exculdeOrgId != undefined) {
+                $('#organization_treegrid_organizationparent_parent').treegrid('remove', exculdeOrgId);
+            }
+        }
+
+        //构建或重载批量移动的Combo
+        function FillOrganizationQuickMoveCombo() {
+            var copydata;
+            try {
+                $('#organization_combo_organizationparent_moveto').combo('getValue');
+                isParsered = true;
+            } catch (e) {
+                $('#organization_combo_organizationparent_moveto').combo({
+                    width: 200,
+                    editable: false,
+                    missingMessage: '请选择父级机构！',
+                    onShowPanel: function () {
+                        var selectedrows = $('#organization_treegrid_organizationtable').treegrid("getSelections");
+                        for (var i = 0; i < selectedrows.length; i++) {
+                            try {
+                                $('#organization_treegrid_organizationparent_moveto').treegrid('remove', selectedrows[i].Id);
+                            } catch (e) {
+                            }
+                        }
+                    },
+                    onHidePanel: function () {
+                        //重新加载
+                        copydata = jQuery.extend(true, {}, mydata)
+                        $('#organization_treegrid_organizationparent_moveto').treegrid('loadData', copydata);
+
+                    }
+                })
+                $('#organization_treegrid_organizationparent_moveto').appendTo($('#organization_combo_organizationparent_moveto').combo('panel'));
+            }
+            copydata = jQuery.extend(true, {}, mydata)
+            $('#organization_treegrid_organizationparent_moveto').treegrid({
+                fit: true,
+                data: copydata,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                border: false,
+                showHeader: true,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#organization_combo_organizationparent_moveto").combo('setText', row.DisplayName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+        }
+
+        //打开修改窗口
+        function OpenOrganizationEditWindow(orgId) {
+
+            FillOrganizationComboExclude(orgId);
+            organization_edit_row = $('#organization_treegrid_organizationtable').treegrid('find', orgId);
+            var parentNode = $('#organization_treegrid_organizationtable').treegrid('find', organization_edit_row.ParentId);
+            $('#organization_validatebox_organizationname').val(organization_edit_row.DisplayName);
+            $('#organization_dialog_editdialog').dialog('open');
+            $('#organization_treegrid_organizationparent_parent').treegrid('unselectAll');
+            if (parentNode != null) {
+                $('#organization_combo_organizationparent_parent').combo('setValue', parentNode.Id);
+                $('#organization_combo_organizationparent_parent').combo('setText', parentNode.DisplayName);
+                $('#organization_treegrid_organizationparent_parent').treegrid('select', parentNode.Id);
+            } else {
+                $('#organization_combo_organizationparent_parent').combo('setValue', '00000000-0000-0000-0000-000000000000');
+                $('#organization_combo_organizationparent_parent').combo('setText', '根节点');
+                $('#organization_treegrid_organizationparent_parent').treegrid('select', '00000000-0000-0000-0000-000000000000');
+            }
+            $('#organization_form_edit').form('validate');
+        }
+
+        //添加、修改窗口提交
+        function SubmitOrganization() {
+            if ($('#organization_form_edit').form('validate')) {
+                var ajaxurl;
+                if (organization_edit_row) {
+                    ajaxurl = '@Url.ActionPermission("Edit", "Organization")';
+                } else {
+                    organization_edit_row = {};
+                    ajaxurl = '@Url.ActionPermission("Add", "Organization")';
+                }
+                organization_edit_row["DisplayName"] = $('#organization_validatebox_organizationname').val();
+                organization_edit_row["ParentId"] = $('#organization_combo_organizationparent_parent').combo('getValue');
+                $.ajaxStart();
+                $.post(ajaxurl, organization_edit_row, function (data) {
+                    $('#organization_dialog_editdialog').dialog('close');
+                    $('#organization_treegrid_organizationtable').treegrid('reload');
+                    UpdateComboDate();
+                     @Html.HasActionPermission("GetOrganizationList", "Organization", "FillOrganizationQuickMoveCombo();")
+                    if (data.resultCode != "1") {
+                        $.messager.alert('提示', data.message, 'warning');
+                    }
+                    $.ajaxEnd();
+                }, 'json')
+            }
+        }
+
+
+
+        $(function () {
+
+            $('.nav-item.userdepartment').addClass('active')
+            UpdateComboDate();
+            FillOrganizationComboExclude();
+               @Html.HasActionPermission("GetOrganizationList", "Organization", "FillOrganizationQuickMoveCombo();")
+ 
+            $('#organization_dialog_editdialog').dialog({
+                closed: true,
+                modal: true,
+                buttons: [{
+                    iconCls:'icon-ok',
+                    text: '提交',
+                    handler: function () {
+                        SubmitOrganization();
+                    }
+                }, {
+                    iconCls: 'icon-no',
+                    text: '取消',
+                    handler: function () {
+                        $('#organization_dialog_editdialog').dialog('close');
+                    }
+                }
+                ],
+                title: "部门",
+                onClose: function () {
+                    //DisableOrganizationValidate();
+                },
+                onOpen: function () {
+                    //EnableOrganizationValidate();
+                }
+            });
+
+            //构建组织架构表
+
+            $('#organization_treegrid_organizationtable').treegrid({
+                //url: "/Organization/GetOrganizationList",
+                @Html.HasActionPermission("GetOrganizationList", "Organization", "url: \"/Organization/GetOrganizationList\",")
+                fit: true,
+                toolbar: '#toolbar',
+                animate: true,
+                border: false,
+                collapsible: true,
+                fitColumns: true,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                singleSelect: false,
+                onLoadSuccess: function (row, data) {
+                    $('.organization_linbutton_rowedit').linkbutton({ plain: true, iconCls: 'icon-edit' });
+
+                },
+                onClickRow: function () {
+                    $('#organization_combo_organizationparent_moveto').combo('clear');
+                    $('#organization_treegrid_organizationparent_moveto').treegrid('unselectAll');
+                }, onDblClickRow: function ( row) {
+                    OpenOrganizationEditWindow(row.Id);
+                }
+            });
+
+
+
+            //展开全部
+            $("#organization_linkbutton_expendall").click(function () {
+                $('#organization_treegrid_organizationtable').treegrid('expandAll');
+
+            });
+
+            //折叠全部
+            $("#organization_linkbutton_collapseall").click(function () {
+
+                $('#organization_treegrid_organizationtable').treegrid('collapseAll');
+            });
+
+            //添加组织架构
+            $("#organization_linkbutton_add").click(function () {
+                $('#organization_treegrid_organizationtable').treegrid('unselectAll');
+
+                $('#organization_form_edit').form('reset');
+                FillOrganizationComboExclude();
+                organization_edit_row = undefined;
+                $('#organization_dialog_editdialog').dialog('open');
+            });
+
+
+
+            //删除组织架构
+            $("#organization_linkbutton_remove").click(function () {
+                var nodes = $('#organization_treegrid_organizationtable').treegrid("getSelections");
+                if (nodes.length > 0) {
+                    $.messager.confirm('确认删除', '将删除所选组织架构及其下属架构，是否确认删除？', function (r) {
+                        if (r) {
+                            var arrayDeleteNodes = new Array();
+                            for (var i = 0; i < nodes.length; i++) {
+                                if (!arrayDeleteNodes.contains(nodes[i].Id)) {
+                                    arrayDeleteNodes.push(nodes[i].Id);
+                                }
+                                var childrenNodes = $('#organization_treegrid_organizationtable').treegrid("getChildren", nodes[i].Id);
+                                for (var k = 0; k < childrenNodes.length; k++) {
+                                    if (!arrayDeleteNodes.contains(childrenNodes[k].Id)) {
+                                        arrayDeleteNodes.push(childrenNodes[k].Id)
+                                    }
+                                }
+                            }
+                            var delectNodes = [];
+                            for (var i = 0; i < arrayDeleteNodes.length; i++) {
+                               
+                                delectNodes.push(  arrayDeleteNodes[i]);
+                               
+                            }
+                            $.ajaxStart();
+                            $.post('/Organization/Remove', { "ids": delectNodes }, function (data) {
+                                if (data.resultCode == 1) {
+                                    $('#organization_dialog_editdialog').dialog('close');
+                                    $('#organization_treegrid_organizationtable').treegrid('reload');
+                                    $.slideMessage('操作成功', data.message)
+                                } else {
+                                    $('#organization_dialog_editdialog').dialog('close');
+                                    $.messager.alert('提示', data.message, 'warning');
+                                }
+                                UpdateComboDate();
+                                $.ajaxEnd();
+                            }, 'json')
+
+                        }
+                    })
+                } else {
+                    $.messager.alert('提示', '您没有选择任何数据', 'info');
+                }
+            });
+
+
+
+            //刷新组织结构表
+            $('#organization_linkbutton_refresh').click(function () {
+                UpdateComboDate();
+                FillOrganizationComboExclude();
+                @Html.HasActionPermission("GetOrganizationList", "Organization", "FillOrganizationQuickMoveCombo();")
+                $('#organization_treegrid_organizationtable').treegrid('reload');
+            });
+
+
+            //搜索框回车事件
+            $('#organization_input_keyword').bind('keydown', function (e) {
+                if (e.keyCode == 13) {
+                    $(document.activeElement).next().click();
+                     @Html.HasActionPermission("GetOrganizationList", "Organization", "FillOrganizationQuickMoveCombo();")
+                }
+            })
+        });
+
+        function formatter(value, row) {
+            return '<a href="javascript:void(0)" class="organization_linbutton_rowedit" id="organization_linbutton_rowedit" onclick="OpenOrganizationEditWindow(\'' + row.Id + '\')">修改</a>';
+        }
+    </script>
+
+}
+
+
+    <div id="toolbar">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td>
+                        @Html.HasActionPermission("Add", "Organization", "<a class=\"easyui-linkbutton\" href=\"javascript:void(0)\" data-options=\"iconCls:'icon-add',plain:true\" id=\"organization_linkbutton_add\">添加</a>")
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        @Html.HasActionPermission("remove", "Organization", "<a class=\"easyui-linkbutton\" href=\"javascript:void(0)\" data-options=\"iconCls:'icon-remove',plain:true\" id=\"organization_linkbutton_remove\">删除</a>")
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-undo',plain:true" id="organization_linkbutton_unselect" onclick="$('#organization_treegrid_organizationtable').treegrid('unselectAll')">取消选择</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-collapse',plain:true" id="organization_linkbutton_collapseall">折叠</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-expand',plain:true" id="organization_linkbutton_expendall">展开</a>
+                    </td>
+
+
+                    <td><div class="datagrid-btn-separator"></div></td>
+
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#organization_treegrid_organizationtable').treegrid('load',{keyword:value})
+                               },width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        @Html.HasActionPermission("Move", "Organization","<span id=\"organization_span_moveto\"><a href=\"javascript:void(0)\" id=\"organization_linkbutton_moveto\" onclick=\"MoveOrganization()\" class=\"easyui-linkbutton\" iconcls=\"icon-redo\" plain=\"true\">转移到</a><select id=\"organization_combo_organizationparent_moveto\"></select><table id=\"organization_treegrid_organizationparent_moveto\" fit=\"true\"><thead><tr><th field=\"DisplayName\" data-options=\"width:196\">请选择目标父节点</th></tr></thead></table></span>")
+                        
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" iconcls="icon-reload" plain="true" id="organization_linkbutton_refresh">刷新</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <table id="organization_treegrid_organizationtable" style="min-width: 900px;">
+        <thead>
+            <tr>
+                <th data-options="field:'DisplayName',width:500,halign:'center'">部门名称</th>
+                <th data-options="field:'edit',width:120,align:'center',formatter:formatter">操作</th>
+            </tr>
+        </thead>
+    </table>
+
+
+    <div id="organization_dialog_editdialog" style="padding: 5px; width: 300px; height: 165px;">
+        <form id="organization_form_edit">
+            <table class="table_edit">
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        上级部门：
+                    </td>
+                    <td class="tdar">
+                        <select id="organization_combo_organizationparent_parent" style="width: 202px"></select>
+                        <table id="organization_treegrid_organizationparent_parent" fit="true">
+                            <thead>
+                                <tr>
+                                    <th field="DisplayName" data-options="width:196">请选择上级部门</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        部门名称：
+                    </td>
+                    <td class="tdar">
+                        <input id="organization_validatebox_organizationname" type="text" class="easyui-validatebox"
+                               missingmessage="部门名称必须填写！" validtype="length[0,20]" style="width: 200px;" invalidmessage="部门名称不能超过20个字符！"
+                               required="true" />
+                    </td>
+                </tr>
+                <tr></tr>
+            </table>
+        </form>
+    </div>

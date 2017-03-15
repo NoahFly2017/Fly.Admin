@@ -1,0 +1,85 @@
+.myprogressbar {
+  border: 1px solid #bbb;
+  height: 40px;
+  width: 300px;
+  overflow: hidden;
+  position: relative;
+  background-color: #ffffff;
+  -ms-filter: "progid: DXImageTransform.Microsoft.gradient(startColorstr = '#ffffff', endColorstr = '#eeeeee')";
+  background-image: -moz-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: -ms-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: -o-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: -webkit-gradient(linear, center top, center bottom, from(#ffffff), to(#eeeeee));
+  background-image: -webkit-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: linear-gradient(top, #ffffff, #eeeeee);
+  -moz-box-shadow: inset 0px 0px 4px #bbbbbb;
+  -webkit-box-shadow: inset 0px 0px 4px #bbbbbb;
+  box-shadow: inset 0px 0px 4px #bbbbbb;
+}
+.myprogressbar .myprogressbar-value {
+  float: left;
+  height: 100%;
+}
+.myprogressbar .myprogressbar-text {
+  display: table;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+.myprogressbar .myprogressbar-text span {
+  display: table-cell;
+  vertical-align: middle;
+}
+.myprogressbar.uncompleted .myprogressbar-value {
+  background-color: #ffaf61;
+  -ms-filter: "progid: DXImageTransform.Microsoft.gradient(startColorstr = '#ffaf61', endColorstr = '#ff9c61')";
+  background-image: -moz-linear-gradient(top, #ffaf61, #ff9c61);
+  background-image: -ms-linear-gradient(top, #ffaf61, #ff9c61);
+  background-image: -o-linear-gradient(top, #ffaf61, #ff9c61);
+  background-image: -webkit-gradient(linear, center top, center bottom, from(#ffaf61), to(#ff9c61));
+  background-image: -webkit-linear-gradient(top, #ffaf61, #ff9c61);
+  background-image: linear-gradient(top, #ffaf61, #ff9c61);
+  -moz-box-shadow: 0px 0px 8px #888888;
+  -webkit-box-shadow: 0px 0px 8px #888888;
+  box-shadow: 0px 0px 8px #888888;
+}
+.myprogressbar.uncompleted .myprogressbar-text {
+  color: #fa5d00;
+}
+.myprogressbar.completed .myprogressbar-value {
+  background-color: #1bc46c;
+  -ms-filter: "progid: DXImageTransform.Microsoft.gradient(startColorstr = '#1bc46c', endColorstr = '#21ac1b')";
+  background-image: -moz-linear-gradient(top, #1bc46c, #21ac1b);
+  background-image: -ms-linear-gradient(top, #1bc46c, #21ac1b);
+  background-image: -o-linear-gradient(top, #1bc46c, #21ac1b);
+  background-image: -webkit-gradient(linear, center top, center bottom, from(#1bc46c), to(#21ac1b));
+  background-image: -webkit-linear-gradient(top, #1bc46c, #21ac1b);
+  background-image: linear-gradient(top, #1bc46c, #21ac1b);
+  -moz-box-shadow: 0px 0px 8px #888888;
+  -webkit-box-shadow: 0px 0px 8px #888888;
+  box-shadow: 0px 0px 8px #888888;
+}
+.myprogressbar.completed .myprogressbar-text {
+  color: #128147;
+}
+.myprogressbar.overrange .myprogressbar-value {
+  background-color: #ff1f44;
+  -ms-filter: "progid: DXImageTransform.Microsoft.gradient(startColorstr = '#ff1f44', endColorstr = '#ff5975')";
+  background-image: -moz-linear-gradient(top, #ff1f44, #ff5975);
+  background-image: -ms-linear-gradient(top, #ff1f44, #ff5975);
+  background-image: -o-linear-gradient(top, #ff1f44, #ff5975);
+  background-image: -webkit-gradient(linear, center top, center bottom, from(#ff1f44), to(#ff5975));
+  background-image: -webkit-linear-gradient(top, #ff1f44, #ff5975);
+  background-image: linear-gradient(top, #ff1f44, #ff5975);
+  -moz-box-shadow: 0px 0px 8px #888888;
+  -webkit-box-shadow: 0px 0px 8px #888888;
+  box-shadow: 0px 0px 8px #888888;
+}
+.myprogressbar.overrange .myprogressbar-text {
+  color: #ffffff;
+}

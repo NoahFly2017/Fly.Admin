@@ -1,0 +1,463 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+}
+
+
+@section script{
+    <style>
+        .datagrid-sort-asc .datagrid-sort-icon {
+            display: none;
+        }
+    </style>
+    <script src="~/Scripts/juery.migrate.js"></script>
+    <script src="~/Scripts/xheditor/xheditor-1.2.1.min.js"></script>
+    <script src="~/Scripts/xheditor/xheditor_lang/zh-cn.js"></script>
+    <script type="text/javascript">
+
+        //批量移动
+        function MoveHelpCenter() {
+            if ($('#hcarticle_combo_hcarticleparent_moveto').combo('getValue') != "") {
+                var selectedrows = $('#hcarticle_treegrid_hcarticletable').treegrid("getSelections");
+                if (selectedrows.length != 0) {
+                    var selectedNodes = [];
+                    for (var i = 0; i < selectedrows.length; i++) {
+                        selectedNodes.push(selectedrows[i].Id);
+                    }
+                    $.ajaxStart();
+                    $.post('/Website/MoveArticles', { "ids": selectedNodes, "parentid": $('#hcarticle_combo_hcarticleparent_moveto').combo('getValue') }, function (data) {
+                        $('#hcarticle_dialog_editdialog').dialog('close');
+                        $('#hcarticle_treegrid_hcarticletable').treegrid('reload');
+
+                        if (data.resultCode != 1) {
+                            $.messager.alert('提示', data.message, 'warning');
+                        }
+                        $.ajaxEnd();
+                    }, 'json');
+                } else {
+                    $.messager.alert('提示', '请选择要移动的项', 'info');
+                }
+            } else {
+                $.messager.alert('提示', '请选择要移动到的父机构', 'info');
+            }
+        }
+        // 更新combo数据
+        var mydata;
+        function UpdateComboDate() {
+            $.ajax({
+                url: "/Website/HelpCenters",
+                dataType: 'json',
+                cache: false,
+                async: false,
+                success: function (data) {
+
+                    mydata = data;
+                }
+            })
+        }
+
+        //构建或重载修改对话框中的Combo
+        function FillHelpCenterComboExclude(exculdeOrgId) {
+            var copydata;
+            copydata = jQuery.extend(true, {}, mydata)
+            var isParsered = false;
+            try {
+                $('#hcarticle_treegrid_hcarticleparent_parent').treegrid('options');
+                isParsered = true;
+            } catch (e) {
+                $('#hcarticle_combo_hcarticleparent_parent').combo({
+                    required: true,
+                    editable: false,
+                    panelHeight:400,
+                    missingMessage: '请选择父级机构！'
+                })
+                $('#hcarticle_treegrid_hcarticleparent_parent').appendTo($('#hcarticle_combo_hcarticleparent_parent').combo('panel'));
+            }
+            $('#hcarticle_treegrid_hcarticleparent_parent').treegrid({
+                data: copydata,
+                idField: 'Id',
+                treeField: 'HelpCenterName',
+                border: false,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#hcarticle_combo_hcarticleparent_parent").combo('setText', row.HelpCenterName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+
+            if (exculdeOrgId != undefined) {
+                $('#hcarticle_treegrid_hcarticleparent_parent').treegrid('remove', exculdeOrgId);
+            }
+        }
+
+        //构建或重载批量移动的Combo
+        function FillHelpCenterQuickMoveCombo() {
+            var copydata;
+            try {
+                $('#hcarticle_combo_hcarticleparent_moveto').combo('getValue');
+                isParsered = true;
+            } catch (e) {
+                $('#hcarticle_combo_hcarticleparent_moveto').combo({
+                    width: 200,
+                    editable: false, panelHeight: 400,
+                    missingMessage: '请选择父级机构！',
+                    onHidePanel: function () {
+                        //重新加载
+                        copydata = jQuery.extend(true, {}, mydata)
+                        $('#hcarticle_treegrid_hcarticleparent_moveto').treegrid('loadData', copydata);
+
+                    }
+                })
+                $('#hcarticle_treegrid_hcarticleparent_moveto').appendTo($('#hcarticle_combo_hcarticleparent_moveto').combo('panel'));
+            }
+            copydata = jQuery.extend(true, {}, mydata)
+            $('#hcarticle_treegrid_hcarticleparent_moveto').treegrid({
+                fit: true,
+                data: copydata,
+                idField: 'Id',
+                treeField: 'HelpCenterName',
+                border: false,
+                showHeader: true,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#hcarticle_combo_hcarticleparent_moveto").combo('setText', row.HelpCenterName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+        }
+
+        //打开修改窗口
+        function OpenHelpCenterEditWindow(orgId) {
+
+            var hcarticle_edit_row = $('#hcarticle_treegrid_hcarticletable').treegrid('find', orgId);
+
+            $.get('/Website/GetArticle/' + hcarticle_edit_row.Id).success(function (data) {
+                
+              
+                $('#hcarticle_form_edit').form('load', data);
+                $('#editor').val(data.Content)
+                $('#hcarticle_dialog_editdialog').dialog('open');
+                $('#hcarticle_treegrid_hcarticleparent_parent').treegrid('unselectAll');
+                $('#hcarticle_combo_hcarticleparent_parent').combo('setValue', data.HelpCenterId);
+                $('#hcarticle_combo_hcarticleparent_parent').combo('setText', data.HelpCenterName);
+                $('#hcarticle_treegrid_hcarticleparent_parent').treegrid('select', data.HelpCenterId);
+            })
+          
+
+            $('#hcarticle_form_edit').form('validate');
+        }
+
+        //添加、修改窗口提交
+        function SubmitHelpCenterArticle() {
+            if ($('#hcarticle_form_edit').form('validate')) {
+                var ajaxurl;
+                if ($('#hcarticle_form_edit').serializeObject().Id != '00000000-0000-0000-0000-000000000000') {
+                    ajaxurl = '/Website/EditArticle';
+                } else {
+
+                    ajaxurl = '/Website/AddArticle';
+                }
+
+                $.ajaxStart();
+                $('#hcarticle_form_edit').ajaxSubmit({
+                    type: 'post',
+                    data: {
+                        content: encodeURIComponent($('#editor').val())
+
+                    }, url: ajaxurl, success: function (data) {
+
+                        $('#hcarticle_dialog_editdialog').dialog('close');
+                        $('#hcarticle_treegrid_hcarticletable').treegrid('reload');
+
+                        if (data.resultCode != "1") {
+                            $.messager.alert('提示', data.message, 'warning');
+                        }
+                        $.ajaxEnd();
+                    }
+                })
+            }
+        }
+
+        /*更改状态*/
+        function changeStatus(id) {
+
+            $.post('/Website/ChangeArticleStatus/' + id, {}, function (data) {
+                if (data.resultCode == 1) {
+                    $('#hcarticle_treegrid_hcarticletable').treegrid('update', {
+                        id: id, row: {
+                            PublishedTime: data.publishedTime,
+                            IsPublished: data.status
+                        }
+                    });
+                    $('.hcarticle_linbutton_rowedit').linkbutton({ plain: true, iconCls: 'icon-edit' });
+
+
+                } else {
+                    $.messager.alert('错误', data.message, 'warning');
+                }
+            }, 'json')
+        }
+
+        $(function () {
+
+            $('.nav-item.userdepartment').addClass('active')
+            UpdateComboDate();
+            FillHelpCenterComboExclude();
+            FillHelpCenterQuickMoveCombo();
+
+
+
+
+            $('#hcarticle_treegrid_hcarticletable').treegrid({
+                //url: "/HelpCenter/GetHelpCenterList",
+                url: "/Website/GetArticles",
+                fit: true,
+                toolbar: '#toolbar',
+                sortName: 'SN',
+                rowStyler: function (row) {
+                    if (row.HelpCenterOrArticleId.substr(0, 1) == '-') {
+                        return 'background:#eee;'
+                    }
+                },
+                remoteSort: false,
+                pagination:true,
+                //animate: false,
+                border: false,
+                collapsible: true,
+                fitColumns: true,
+                idField: 'HelpCenterOrArticleId',
+                treeField: 'HelpCenterNameOrArticleTitle',
+                singleSelect: false,
+                onLoadSuccess: function (row, data) {
+                    $('.hcarticle_linbutton_rowedit').linkbutton({ plain: true, iconCls: 'icon-edit' });
+                    $(this).treegrid('clearSelections')
+                },
+                onClickRow: function (row) {
+                    if (row.HelpCenterOrArticleId.substr(0, 1) == '-') {
+                        $(this).treegrid('unselect', row.HelpCenterOrArticleId)
+                    }
+                    $('#hcarticle_combo_hcarticleparent_moveto').combo('clear');
+                    $('#hcarticle_treegrid_hcarticleparent_moveto').treegrid('unselectAll');
+                },
+                onDblClickRow: function (row) {
+                    if (row.HelpCenterOrArticleId.substr(0, 1) != '-') {
+                        OpenHelpCenterEditWindow(row.Id);
+                    }
+                }
+            });
+
+
+            $('#hcarticle_dialog_editdialog').dialog({
+                closed: true,
+                modal: true,
+                buttons: [{
+                    iconCls: 'icon-ok',
+                    text: '提交',
+                    handler: function () {
+                        SubmitHelpCenterArticle();
+                    }
+                }, {
+                    iconCls: 'icon-no',
+                    text: '取消',
+                    handler: function () {
+                        $('#hcarticle_dialog_editdialog').dialog('close');
+                    }
+                }
+                ],
+                title: "文章"
+            });
+            $('#editor').xheditor({
+                skin: 'nostyle', emotMark: false
+
+                       , tools: "Cut,Copy,Paste,Pastetext,|,Blocktag,Fontface,FontSize,Bold,Italic,Underline,Strikethrough,FontColor,BackColor,SelectAll,Removeformat,|,Align,List,Outdent,Indent,|,Link,Unlink,Hr,Emot,Table,|,Source,Preview,Fullscreen"
+            });
+            //展开全部
+            $("#hcarticle_linkbutton_expendall").click(function () {
+                $('#hcarticle_treegrid_hcarticletable').treegrid('expandAll');
+
+            });
+
+            //折叠全部
+            $("#hcarticle_linkbutton_collapseall").click(function () {
+
+                $('#hcarticle_treegrid_hcarticletable').treegrid('collapseAll');
+            });
+
+            $("#hcarticle_linkbutton_add").click(function () {
+                $('#hcarticle_treegrid_hcarticletable').treegrid('unselectAll');
+                $('#hcarticle_form_edit').form('reset');
+                $('#hcarticle_dialog_editdialog').dialog('open');
+            });
+
+
+
+            $("#hcarticle_linkbutton_remove").click(function () {
+                var nodes = $('#hcarticle_treegrid_hcarticletable').treegrid("getSelections");
+                if (nodes.length > 0) {
+                    $.messager.confirm('确认删除', '将删除所选文章，是否确认删除？', function (r) {
+                        if (r) {
+                            var arrayDeleteNodes = new Array();
+                            for (var i = 0; i < nodes.length; i++) {
+                                if (!arrayDeleteNodes.contains(nodes[i].Id)) {
+                                    arrayDeleteNodes.push(nodes[i].Id);
+                                }
+                                var childrenNodes = $('#hcarticle_treegrid_hcarticletable').treegrid("getChildren", nodes[i].Id);
+                                for (var k = 0; k < childrenNodes.length; k++) {
+                                    if (!arrayDeleteNodes.contains(childrenNodes[k].Id)) {
+                                        arrayDeleteNodes.push(childrenNodes[k].Id)
+                                    }
+                                }
+                            }
+                            var delectNodes = [];
+                            for (var i = 0; i < arrayDeleteNodes.length; i++) {
+
+                                delectNodes.push(arrayDeleteNodes[i]);
+
+                            }
+                            $.ajaxStart();
+                            $.post('/Website/RemoveArticles', { "ids": delectNodes }, function (data) {
+                                if (data.resultCode == 1) {
+                                    $('#hcarticle_dialog_editdialog').dialog('close');
+                                    $('#hcarticle_treegrid_hcarticletable').treegrid('reload');
+                                    $.slideMessage('操作成功', data.message)
+                                } else {
+                                    $('#hcarticle_dialog_editdialog').dialog('close');
+                                    $.messager.alert('提示', data.message, 'warning');
+                                }
+                                UpdateComboDate();
+                                $.ajaxEnd();
+                            }, 'json')
+
+                        }
+                    })
+                } else {
+                    $.messager.alert('提示', '您没有选择任何数据', 'info');
+                }
+            });
+
+
+            $('#hcarticle_linkbutton_refresh').click(function () {
+                UpdateComboDate();
+                $('#hcarticle_treegrid_hcarticletable').treegrid('reload');
+            });
+
+
+
+        });
+
+        function formatter(value, row) {
+
+            if (row.HelpCenterOrArticleId.substr(0, 1) != '-') {
+                return '<a href="javascript:void(0)" class="hcarticle_linbutton_rowedit" id="hcarticle_linbutton_rowedit" onclick="OpenHelpCenterEditWindow(\'' + row.Id + '\')">修改</a>';
+            }
+
+        }
+
+        function statusformatter(value, rows, index) {
+            if (rows.HelpCenterOrArticleId.substr(0, 1) != '-') {
+                if (value) {
+                    return '<span  style="cursor:pointer;display:inline-block;width:16px;height:16px;vertical-align: middle;" class=" icon-pass" title="已发布，点击可更改为未发布" onclick="changeStatus(\'' + rows.Id + '\')"></span>';
+                } else {
+                    return '<span   style="cursor:pointer;display:inline-block;width:16px;height:16px;vertical-align: middle;" class=" icon-nopass" title="未发布，点击可更改为已发布" onclick="changeStatus(\'' + rows.Id + '\')"></span>';
+                }
+            }
+        }
+    </script>
+
+}
+
+
+<div id="toolbar">
+    <table cellspacing="0" cellpadding="0">
+        <tbody>
+            <tr>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-add',plain:true" id="hcarticle_linkbutton_add">添加</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-remove',plain:true" id="hcarticle_linkbutton_remove">删除</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-undo',plain:true" id="hcarticle_linkbutton_unselect" onclick="$('#hcarticle_treegrid_hcarticletable').treegrid('unselectAll')">取消选择</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-collapse',plain:true" id="hcarticle_linkbutton_collapseall">折叠</a>
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-expand',plain:true" id="hcarticle_linkbutton_expendall">展开</a>
+                </td>
+
+
+                <td><div class="datagrid-btn-separator"></div></td>
+
+                <td>
+                    搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#hcarticle_treegrid_hcarticletable').treegrid('load',{keyword:value})
+                               },width:235" />
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <span id="hcarticle_span_moveto"><a href="javascript:void(0)" id="hcarticle_linkbutton_moveto" onclick="MoveHelpCenter()" class="easyui-linkbutton" iconcls="icon-redo" plain="true">转移到</a><select id="hcarticle_combo_hcarticleparent_moveto"></select><table id="hcarticle_treegrid_hcarticleparent_moveto" fit="true"><thead><tr><th field="HelpCenterName" data-options="width:196">请选择目标父节点</th></tr></thead></table></span>
+
+                </td>
+                <td><div class="datagrid-btn-separator"></div></td>
+                <td>
+                    <a class="easyui-linkbutton" href="javascript:void(0)" iconcls="icon-reload" plain="true" id="hcarticle_linkbutton_refresh">刷新</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<table id="hcarticle_treegrid_hcarticletable" style="min-width: 900px;">
+    <thead>
+        <tr>
+            <th data-options="field:'HelpCenterNameOrArticleTitle',width:500,halign:'center'">标题</th>
+            <th data-options="field:'Author',width:200,align:'center'">作者</th>
+            <th data-options="field:'From',width:200,align:'center'">来源</th>
+            <th data-options="field:'SN',width:100,align:'center',formatter:function(value,row){return value}">排序</th>
+            <th data-options="field:'CreateTime',width:200,align:'center',formatter:function(value,row){if (row.HelpCenterOrArticleId.substr(0, 1) != '-') {return $.formatJsonDate(value)}}">创建时间</th>
+            <th data-options="field:'EmployeeName',width:150,align:'center'">创建人</th>
+            <th data-options="field:'PublishedTime',width:200,align:'center',formatter:function(value,row){if(row.HelpCenterOrArticleId.substr(0, 1) != '-'){ if(value){return $.formatJsonDate(value)}else{return '<span style=\'color:#aaa\' &lt;&rt;/span>未发布'}}}">发布时间</th>
+            <th data-options="field:'IsPublished',width:140,align:'center',formatter:statusformatter">
+                发布时间
+            </th>
+            <th data-options="field:'edit',width:120,align:'center',formatter:formatter">操作</th>
+        </tr>
+    </thead>
+</table>
+
+
+<div id="hcarticle_dialog_editdialog" style="padding: 5px; width: 810px; height:530px;">
+    <form id="hcarticle_form_edit">
+
+        <p>
+            <span>标题：</span><input name="Title" class="easyui-textbox" data-options="validType:'length[0,100]',required:true" style="width:580px;" />
+            <span style="margin-left:20px;">发布：</span><input name="IsPublished" style="margin-left:10px;" type="radio" value="true" checked />是  <input name="IsPublished" style="margin-left:10px;" type="radio" value="false" />否
+        </p>
+        <input hidden="hidden" name="Id" value="00000000-0000-0000-0000-000000000000" />
+
+        <div style="padding-top:5px;">
+            <span>
+                <span>所属频道：</span><select id="hcarticle_combo_hcarticleparent_parent" name="HelpCenterId" style="width: 202px"></select>
+                <table id="hcarticle_treegrid_hcarticleparent_parent" fit="true">
+                    <thead>
+                        <tr>
+                            <th field="HelpCenterName" data-options="width:196">请选择所属帮助中心</th>
+                        </tr>
+                    </thead>
+                </table>
+            </span>
+            <span>作者：</span><input name="Author" class="easyui-validatebox" type="text" />
+            <span>来源：</span><input name="From" class="easyui-validatebox" type="text" />
+            <span>排序：</span><input name="SN" value="100" min="0" max="9999" class="easyui-numberbox" style="width:50px" />
+        </div>
+        <p style="margin-top:10px;">文章：</p>
+
+        <textarea style="width:100%;height:330px;" id="editor"></textarea>
+
+    </form>
+</div>

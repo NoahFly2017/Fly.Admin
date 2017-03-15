@@ -1,0 +1,17 @@
+﻿@using Fly.Core.Models
+@model List<Fly.Web.Authorization.ViewPermissionGroup>
+<div class="menuitem-description border-bottom">
+    <h2 class="padding-l-15 padding-r-15">@ViewBag.subTitle</h2>
+</div>
+<div class="submenu">
+    @{
+        foreach (var group in Model)
+        {
+  
+            <a  class="border-bottom @((group.Url.ToLower() == ("/" + Url.RequestContext.RouteData.Values["currcontroller"] + "/" + Url.RequestContext.RouteData.Values["curraction"]).ToLower()) ? "active" : "")" href="@group.Url">
+                @group.DisplayName
+            </a>
+        }
+    }
+   
+</div>

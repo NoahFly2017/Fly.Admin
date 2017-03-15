@@ -1,0 +1,487 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+@section script{
+
+    <script type="text/javascript">
+        var permissiongroup_edit_row;
+        //批量移动
+        function MovePermissionGroup() {
+            if ($('#permissiongroup_combo_permissiongroupparent_moveto').combo('getValue') != "") {
+                var selectedrows = $('#permissiongroup_treegrid_permissiongrouptable').treegrid("getSelections");
+                if (selectedrows.length != 0) {
+                    var selectedIdsString = "";
+                    for (var i = 0; i < selectedrows.length; i++) {
+                        if (i == selectedrows.length - 1) {
+                            selectedIdsString += selectedrows[i].Id;
+                        } else {
+                            selectedIdsString += selectedrows[i].Id + ",";
+                        }
+                    }
+                    $.ajaxStart();
+                    $.post('@Url.ActionPermission("MovePermissionGroups", "Permission")', { "ids": selectedIdsString, "parentid": $('#permissiongroup_combo_permissiongroupparent_moveto').combo('getValue') }, function (data) {
+                        $('#permissiongroup_dialog_editdialog').dialog('close');
+                        $('#permissiongroup_treegrid_permissiongrouptable').treegrid('reload');
+                        UpdateComboDate();
+                        FillPermissionGroupQuickMoveCombo();
+                        if (data.resultCode != 1) {
+                            $.messager.alert('提示', data.message, 'warning');
+                        }
+                        $.ajaxEnd();
+                    }, 'json');
+                } else {
+                    $.messager.alert('提示', '请选择要移动的项', 'info');
+                }
+            } else {
+                $.messager.alert('提示', '请选择要移动到的父机构', 'info');
+            }
+        }
+        // 更新combo数据
+        var mydata;
+        function UpdateComboDate() {
+            $.ajax({
+                @Html.HasActionPermission("GetPermissionGroups", "Permission", " url: \"/Permission/GetPermissionGroups?type=withroot\",")
+                dataType: 'json',
+                cache: false,
+                async: false,
+                success: function (data) {
+
+                    data.rows.push({ "DisplayName": "根节点", "Id": "00000000-0000-0000-0000-000000000000" })
+                    mydata = data;
+                }
+            })
+        }
+
+        //构建或重载修改对话框中的Combo
+        function FillPermissionGroupComboExclude(exculdeOrgId) {
+            var copydata;
+            copydata = jQuery.extend(true, {}, mydata)
+            var isParsered = false;
+            try {
+                $('#permissiongroup_treegrid_permissiongroupparent_parent').treegrid('options');
+                isParsered = true;
+            } catch (e) {
+                $('#permissiongroup_combo_permissiongroupparent_parent').combo({
+                    required: true,
+                    editable: false,
+                    missingMessage: '请选择父级机构！'
+                })
+                $('#permissiongroup_treegrid_permissiongroupparent_parent').appendTo($('#permissiongroup_combo_permissiongroupparent_parent').combo('panel'));
+            }
+            $('#permissiongroup_treegrid_permissiongroupparent_parent').treegrid({
+                data: copydata,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                border: false,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $(this).treegrid('unselectAll');
+                    $("#permissiongroup_combo_permissiongroupparent_parent").combo('setText', row.DisplayName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+            if (exculdeOrgId != undefined) {
+                $('#permissiongroup_treegrid_permissiongroupparent_parent').treegrid('remove', exculdeOrgId);
+            }
+        }
+
+        //构建或重载批量移动的Combo
+        function FillPermissionGroupQuickMoveCombo() {
+            var copydata;
+            try {
+                $('#permissiongroup_combo_permissiongroupparent_moveto').combo('getValue');
+                isParsered = true;
+            } catch (e) {
+                $('#permissiongroup_combo_permissiongroupparent_moveto').combo({
+                    width: 200,
+                    editable: false,
+                    missingMessage: '请选择父级机构！',
+                    onShowPanel: function () {
+                        var selectedrows = $('#permissiongroup_treegrid_permissiongrouptable').treegrid("getSelections");
+                        for (var i = 0; i < selectedrows.length; i++) {
+                            try {
+                                $('#permissiongroup_treegrid_permissiongroupparent_moveto').treegrid('remove', selectedrows[i].Id);
+                            } catch (e) {
+                            }
+                        }
+                    },
+                    onHidePanel: function () {
+                        //重新加载
+                        copydata = jQuery.extend(true, {}, mydata)
+                        $('#permissiongroup_treegrid_permissiongroupparent_moveto').treegrid('loadData', copydata);
+
+                    }
+                })
+                $('#permissiongroup_treegrid_permissiongroupparent_moveto').appendTo($('#permissiongroup_combo_permissiongroupparent_moveto').combo('panel'));
+            }
+            copydata = jQuery.extend(true, {}, mydata)
+            $('#permissiongroup_treegrid_permissiongroupparent_moveto').treegrid({
+                fit: true,
+                data: copydata,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                border: false,
+                showHeader: true,
+                singleSelect: true,
+                onClickRow: function (row) {
+                    $("#permissiongroup_combo_permissiongroupparent_moveto").combo('setText', row.DisplayName).combo('setValue', row.Id).combo('hidePanel');
+                }
+            })
+        }
+
+        //打开修改窗口
+        function OpenPermissionGroupEditWindow(orgId) {
+            FillPermissionGroupComboExclude(orgId);
+            permissiongroup_edit_row = $('#permissiongroup_treegrid_permissiongrouptable').treegrid('find', orgId);
+           //permissiongroup_edit_row["children"] = null;
+            var parentNode = $('#permissiongroup_treegrid_permissiongrouptable').treegrid('find', permissiongroup_edit_row.ParentId);
+            $('#permissiongroup_validatebox_permissiongroupname').val(permissiongroup_edit_row.DisplayName);
+            $('#permissiongroup_dialog_editdialog').dialog('open');
+            $('#permissiongroup_treegrid_permissiongroupparent_parent').treegrid('unselectAll');
+            if (parentNode != null) {
+                $('#permissiongroup_combo_permissiongroupparent_parent').combo('setValue', parentNode.Id);
+                $('#permissiongroup_combo_permissiongroupparent_parent').combo('setText', parentNode.DisplayName);
+                $('#permissiongroup_treegrid_permissiongroupparent_parent').treegrid('select', parentNode.Id);
+            } else {
+                $('#permissiongroup_combo_permissiongroupparent_parent').combo('setValue', "00000000-0000-0000-0000-000000000000");
+                $('#permissiongroup_combo_permissiongroupparent_parent').combo('setText', '根节点');
+                $('#permissiongroup_treegrid_permissiongroupparent_parent').treegrid('select', "00000000-0000-0000-0000-000000000000");
+            }
+            $('#permissiongroup_validatebox_navid').val(permissiongroup_edit_row.Tag);
+            $('#permissiongroup_validatebox_permissiongroupurl').val(permissiongroup_edit_row.Url);
+            $('#permissiongroup_validatebox_headshot').val(permissiongroup_edit_row.Headshot);
+            $('#permissiongroup_numberbox_sn').numberbox('setValue', permissiongroup_edit_row.SN);
+            $('#permissiongroup_form_edit').form('validate');
+
+        }
+
+        //添加、修改窗口提交
+        function SubmitPermissionGroup() {
+            if ($('#permissiongroup_form_edit').form('validate')) {
+                var ajaxurl;
+                if (permissiongroup_edit_row) {
+                    ajaxurl = '@Url.ActionPermission("EditPermissionGroup", "Permission")';
+                } else {
+                    permissiongroup_edit_row = { Id: '00000000-0000-0000-0000-000000000000' };
+                    ajaxurl = '@Url.ActionPermission("AddPermissionGroup", "Permission")';
+                }
+                permissiongroup_edit_row["DisplayName"] = $('#permissiongroup_validatebox_permissiongroupname').val();
+                permissiongroup_edit_row["ParentId"] = $('#permissiongroup_combo_permissiongroupparent_parent').combo('getValue');
+                permissiongroup_edit_row["Tag"] = $('#permissiongroup_validatebox_navid').val();
+                permissiongroup_edit_row["Url"] = $('#permissiongroup_validatebox_permissiongroupurl').val();
+                permissiongroup_edit_row["Headshot"] = $('#permissiongroup_validatebox_headshot').val();
+                permissiongroup_edit_row["SN"] = $('#permissiongroup_numberbox_sn').numberbox('getValue');
+                $.ajaxStart();
+                $.post(ajaxurl, permissiongroup_edit_row, function (data) {
+                    $('#permissiongroup_dialog_editdialog').dialog('close');
+                    $('#permissiongroup_treegrid_permissiongrouptable').treegrid('reload');
+                    UpdateComboDate();
+                    FillPermissionGroupQuickMoveCombo();
+                    if (data.resultCode != "1") {
+                        $.messager.alert('提示', data.message, 'warning');
+                    }
+                    $.ajaxEnd();
+                }, 'json')
+            }
+        }
+
+
+
+        $(function () {
+            $('.nav-item.permission').addClass('active')
+            UpdateComboDate();
+            FillPermissionGroupComboExclude();
+            FillPermissionGroupQuickMoveCombo();
+            $('#permissiongroup_dialog_editdialog').dialog({
+                closed: true,
+                modal: true,
+                buttons: [{
+                    iconCls: 'icon-ok',
+                    text: '提交',
+                    handler: function () {
+                        SubmitPermissionGroup();
+                    }
+                }, {
+                    iconCls: 'icon-no',
+                    text: '取消',
+                    handler: function () {
+                        $('#permissiongroup_dialog_editdialog').dialog('close');
+                    }
+                }
+                ],
+                title: "权限组",
+                onClose: function () {
+                    //DisableOrganizationValidate();
+                },
+                onOpen: function () {
+                    //EnableOrganizationValidate();
+                }
+            });
+
+            //构建表
+
+            $('#permissiongroup_treegrid_permissiongrouptable').treegrid({
+                @Html.HasActionPermission("GetPermissionGroups", "Permission", " url:\"/Permission/GetPermissionGroups\",")
+                fit: true,
+                toolbar: '#toolbar',
+                animate: true,
+                border: false,
+                collapsible: true,
+                fitColumns: true,
+                idField: 'Id',
+                treeField: 'DisplayName',
+                sortName: 'SN',
+                remoteSort:false,
+                sortOrder:'asc',
+                singleSelect: true,
+                rowStyler: function (row) {
+                    if (row.children) {
+                        return 'font-weight:bold;'
+                    }
+                },
+                onLoadSuccess: function (row, data) {
+                    $('.permissiongroup_linbutton_rowedit').linkbutton({ plain: true, iconCls: 'icon-edit' });
+                },
+                onClickRow: function () {
+                    $('#permissiongroup_combo_permissiongroupparent_moveto').combo('clear');
+                    $('#permissiongroup_treegrid_permissiongroupparent_moveto').treegrid('unselectAll');
+                }, onDblClickRow: function (row) {
+                    OpenPermissionGroupEditWindow(row.Id);
+                }
+            });
+
+
+
+            //展开全部
+            $("#permissiongroup_linkbutton_expendall").click(function () {
+                $('#permissiongroup_treegrid_permissiongrouptable').treegrid('expandAll');
+
+            });
+
+            //折叠全部
+            $("#permissiongroup_linkbutton_collapseall").click(function () {
+
+                $('#permissiongroup_treegrid_permissiongrouptable').treegrid('collapseAll');
+            });
+
+            //添加
+            $("#permissiongroup_linkbutton_add").click(function () {
+                $('#permissiongroup_treegrid_permissiongrouptable').treegrid('unselectAll');
+
+                $('#permissiongroup_form_edit').form('reset');
+                FillPermissionGroupComboExclude();
+                permissiongroup_edit_row = undefined;
+                $('#permissiongroup_dialog_editdialog').dialog('open');
+            });
+
+
+
+            //删除
+            $("#permissiongroup_linkbutton_remove").click(function () {
+                var nodes = $('#permissiongroup_treegrid_permissiongrouptable').treegrid("getSelections");
+
+                if (nodes.length > 0) {
+                    $.messager.confirm('确认删除', '将删除所选权限组及其下属权限组，是否确认删除？', function (r) {
+                        if (r) {
+                            var arrayDeleteNodes = new Array();
+                            for (var i = 0; i < nodes.length; i++) {
+                                if (!arrayDeleteNodes.contains(nodes[i].Id)) {
+                                    arrayDeleteNodes.push(nodes[i].Id);
+                                }
+                                var childrenNodes = $('#permissiongroup_treegrid_permissiongrouptable').treegrid("getChildren", nodes[i].Id);
+                                for (var k = 0; k < childrenNodes.length; k++) {
+                                    if (!arrayDeleteNodes.contains(childrenNodes[k].Id)) {
+                                        arrayDeleteNodes.push(childrenNodes[k].Id)
+                                    }
+                                }
+                            }
+                            var deleteNodesString = "";
+                            for (var i = 0; i < arrayDeleteNodes.length; i++) {
+                                if (i == arrayDeleteNodes.length - 1) {
+                                    deleteNodesString += arrayDeleteNodes[i];
+                                } else {
+                                    deleteNodesString += arrayDeleteNodes[i] + ",";
+                                }
+                            }
+                            $.ajaxStart();
+                            $.post('@Url.ActionPermission("RemovePermissionGroups", "Permission")', { "ids": deleteNodesString }, function(data) {
+                                if (data.resultCode == 1) {
+                                    $('#permissiongroup_dialog_editdialog').dialog('close');
+                                    $('#permissiongroup_treegrid_permissiongrouptable').treegrid('reload');
+                                    $.slideMessage('操作成功', data.message);
+                                } else {
+                                    $('#permissiongroup_dialog_editdialog').dialog('close');
+                                    $.messager.alert('提示', data.message, 'warning');
+                                }
+                                UpdateComboDate();
+                                $.ajaxEnd();
+                            }, 'json');
+                        }
+                    })
+                } else {
+                    $.messager.alert('提示', '您没有选择任何数据', 'info');
+                }
+            });
+
+
+
+            //刷新
+            $('#permissiongroup_linkbutton_refresh').click(function () {
+                UpdateComboDate();
+                FillPermissionGroupComboExclude();
+                FillPermissionGroupQuickMoveCombo();
+                $('#permissiongroup_treegrid_permissiongrouptable').treegrid('reload');
+            });
+        });
+
+        function formatterEditor(value, row) {
+         
+            return '<a href="javascript:void(0)" class="permissiongroup_linbutton_rowedit" onclick="OpenPermissionGroupEditWindow(\'' + row.Id + '\')">修改</a>';
+                 
+        }
+
+    </script>
+
+}
+
+
+    <div id="toolbar">
+        <table cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td>
+                        @Html.HasActionPermission("AddPermissionGroup", "Permission","<a class=\"easyui-linkbutton\" href=\"javascript:void(0)\" data-options=\"iconCls:'icon-add',plain:true\" id=\"permissiongroup_linkbutton_add\">添加</a>")
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        @Html.HasActionPermission("RemovePermissionGroups", "Permission", "<a class=\"easyui-linkbutton\" href=\"javascript:void(0)\" data-options=\"iconCls:'icon-remove',plain:true\" id=\"permissiongroup_linkbutton_remove\">删除</a>")
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-undo',plain:true" id="permissiongroup_linkbutton_unselect" onclick="$('#permissiongroup_treegrid_permissiongrouptable').treegrid('unselectAll')">取消选择</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-collapse',plain:true" id="permissiongroup_linkbutton_collapseall">折叠</a>
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" data-options="iconCls:'icon-expand',plain:true" id="permissiongroup_linkbutton_expendall">展开</a>
+                    </td>
+
+
+                    <td><div class="datagrid-btn-separator"></div></td>
+
+                    <td>
+                        <span id="permissiongroup_span_moveto">
+                            @Html.HasActionPermission("AddPermissionGroup", "Permission", "<a href=\"javascript:void(0)\" id=\"permissiongroup_linkbutton_moveto\" onclick=\"MovePermissionGroup()\" class=\"easyui-linkbutton\" iconcls=\"icon-redo\" plain=\"true\">转移到</a>")
+                            <select id="permissiongroup_combo_permissiongroupparent_moveto"></select>
+                            <table id="permissiongroup_treegrid_permissiongroupparent_moveto" fit="true">
+                                <thead>
+                                    <tr>
+                                        <th field="DisplayName" data-options="width:196">请选择目标父节点</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </span>
+
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        搜索：<input class="easyui-searchbox" data-options="prompt:'请输入查询关键字',searcher:function(value,name){
+                               $('#permissiongroup_treegrid_permissiongrouptable').treegrid('load',{keyword:value})
+                               },width:235" />
+                    </td>
+                    <td><div class="datagrid-btn-separator"></div></td>
+                    <td>
+                        <a class="easyui-linkbutton" href="javascript:void(0)" iconcls="icon-reload" plain="true" id="permissiongroup_linkbutton_refresh">刷新</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <table id="permissiongroup_treegrid_permissiongrouptable" style="min-width: 900px;">
+        <thead>
+            <tr>
+                <th data-options="field:'DisplayName',width:500,halign:'center'">权限组名称</th>
+                <th data-options="field:'Tag',width:500,halign:'center'">标志名</th>
+                <th data-options="field:'Url',width:500,halign:'center'">权限路径</th>
+                <th data-options="field:'Headshot',width:500,halign:'center'">小图标</th>
+                <th data-options="field:'SN',width:80,fixed:true,align:'center'">排序号</th>
+                @{
+                   if(HtmlExtensions.HasActionPermission("EditPermissionGroup", "permission")){
+                     <th data-options="field:'edit',width:120,align:'center',formatter:formatterEditor">操作</th>
+                   }
+                }
+              
+            </tr>
+        </thead>
+    </table>
+
+
+    <div id="permissiongroup_dialog_editdialog" style="padding: 5px; width:340px; height: 315px;">
+        <form id="permissiongroup_form_edit">
+            <table class="table_edit">
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        上级权限组：
+                    </td>
+                    <td class="tdar">
+                        <select id="permissiongroup_combo_permissiongroupparent_parent" style="width: 220px"></select>
+                        <table id="permissiongroup_treegrid_permissiongroupparent_parent" fit="true">
+                            <thead>
+                                <tr>
+                                    <th field="DisplayName" data-options="width:196">请选择上级权限组</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        权限组名称：
+                    </td>
+                    <td class="tdar">
+                        <input id="permissiongroup_validatebox_permissiongroupname" type="text" class="easyui-validatebox"
+                               missingmessage="权限组名称必须填写！" validtype="length[0,20]" style="width: 218px;" invalidmessage="权限组名称不能超过20个字符！"
+                               required="true" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                       标志名：
+                    </td>
+                    <td class="tdar">
+                        <input  id="permissiongroup_validatebox_navid" type="text" class="easyui-validatebox" style="width: 218px;" required="true" validtype="length[0,224]" invalidmessage="HTML标志名不能超过224个字符！" missingmessage="HTML标志名必须填写！" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        权限路径：
+                    </td>
+                    <td class="tdar">
+                        <input id="permissiongroup_validatebox_permissiongroupurl" type="text" class="easyui-validatebox" style="width: 218px;" required="true" validtype="length[0,224]" invalidmessage="权限路径不能超过224个字符！" missingmessage="权限路径必须填写！" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        小图标：
+                    </td>
+                    <td class="tdar">
+                        <input id="permissiongroup_validatebox_headshot" type="text" class="easyui-validatebox" style="width: 218px;"  validtype="length[0,224]" invalidmessage="小图标不能超过128个字符！"  />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tdal" style="height:35px;">
+                        排序号：
+                    </td>
+                    <td class="tdar">
+                        <input id="permissiongroup_numberbox_sn" type="text" class="easyui-numberbox" min="0" max="9999" style="width: 218px;" required="true"  missingmessage="排序号必填！" value="100" />
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
